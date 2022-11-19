@@ -15,15 +15,16 @@ const logger = new Logger('rryth')
 
 function handleError(session: Session, err: Error) {
   if (Quester.isAxiosError(err)) {
-    if (err.response?.status === 402) {
-      return session.text('.unauthorized')
-    } else if (err.response?.status) {
-      return session.text('.response-error', [err.response.status])
-    } else if (err.code === 'ETIMEDOUT') {
-      return session.text('.request-timeout')
-    } else if (err.code) {
-      return session.text('.request-failed', [err.code])
-    }
+    return logger.error(err.response.data)
+    // if (err.response?.status === 402) {
+    //   return session.text('.unauthorized')
+    // } else if (err.response?.status) {
+    //   return session.text('.response-error', [err.response.status])
+    // } else if (err.code === 'ETIMEDOUT') {
+    //   return session.text('.request-timeout')
+    // } else if (err.code) {
+    //   return session.text('.request-failed', [err.code])
+    // }
   }
   logger.error(err)
   return session.text('.unknown-error')
@@ -208,8 +209,8 @@ export function apply(ctx: Context, config: Config) {
       const data =
       {
         prompt: parameters.prompt + ' ### ' + parameters.uc,
-        source_image: image,
-        source_processing: undefined,
+        // source_image: image,
+        // source_processing: 'img2img',
         params: {
           sampler_name: 'k_euler_a', // sampler.sd[options.sampler],//TODO: 采样器名称匹配
           cfg_scale: parameters.scale,
@@ -219,28 +220,14 @@ export function apply(ctx: Context, config: Config) {
           width: parameters.width,
           steps: parameters.steps,
           n: parameters.batch_size,
-          nsfw: false,
-          censor_nsfw: false,
-          models: [
-            "Anything Diffusion" //后续会兼容
-          ]
-        }
-
-        // {
-        //   "source_image": "string",
-        //   "source_processing": "img2img"
-        // }
-        // ...project(parameters, {
-        //   prompt: 'prompt',
-        //   batch_size: 'n_samples',
-        //   seed: 'seed',
-        //   negative_prompt: 'uc',
-        //   cfg_scale: 'scale',
-        //   steps: 'steps',
-        //   width: 'width',
-        //   height: 'height',
-        //   denoising_strength: 'strength',
-        // }),
+          seed_variation: 1,
+          karras: true //听说事魔法
+        },
+        nsfw: false,
+        censor_nsfw: false,
+        models: [
+          "Anything Diffusion" //后续会兼容
+        ]
       }
 
       const request = () => ctx.http.axios(config.endpoint, {

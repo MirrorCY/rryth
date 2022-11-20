@@ -1,31 +1,32 @@
-import { Context, Dict, Logger, omit, Quester, segment, Session, trimSlash } from 'koishi'
+import { Context, Dict, Logger, Quester, segment, Session } from 'koishi'
 import { Config, modelMap, models, orientMap, parseForbidden, parseInput, sampler } from './config'
 import { ImageData } from './types'
-import { closestMultiple, download, getImageSize, login, NetworkError, project, resizeInput, Size, stripDataPrefix } from './utils'
+import { closestMultiple, download, getImageSize, login, NetworkError, resizeInput, Size, stripDataPrefix } from './utils'
 import { } from '@koishijs/translator'
 import { } from '@koishijs/plugin-help'
-
 
 export * from './config'
 
 export const reactive = true
 export const name = 'rryth'
 
-const logger = new Logger('rryth')
+const logger = new Logger(name)
 
 function handleError(session: Session, err: Error) {
   if (Quester.isAxiosError(err)) {
-    logger.error(err.response.data)
-    return session.text(err.response.data.message)
-    // if (err.response?.status === 402) {
-    //   return session.text('.unauthorized')
-    // } else if (err.response?.status) {
-    //   return session.text('.response-error', [err.response.status])
-    // } else if (err.code === 'ETIMEDOUT') {
-    //   return session.text('.request-timeout')
-    // } else if (err.code) {
-    //   return session.text('.request-failed', [err.code])
-    // }
+    if (err.response?.data) {
+      logger.error(err.response.data)
+      return session.text(err.response.data.message)
+    }
+    if (err.response?.status === 402) {
+      return session.text('.unauthorized')
+    } else if (err.response?.status) {
+      return session.text('.response-error', [err.response.status])
+    } else if (err.code === 'ETIMEDOUT') {
+      return session.text('.request-timeout')
+    } else if (err.code) {
+      return session.text('.request-failed', [err.code])
+    }
   }
   logger.error(err)
   return session.text('.unknown-error')
@@ -206,30 +207,34 @@ export function apply(ctx: Context, config: Config) {
         tasks[session.cid]?.delete(id)
         globalTasks.delete(id)
       }
-
-      const data =
-      {
-        prompt: parameters.prompt + ' ### ' + parameters.uc,
-        // source_image: image,
-        // source_processing: 'img2img',
-        params: {
-          sampler_name: 'k_euler_a', // sampler.sd[options.sampler],//TODO: 采样器名称匹配
-          cfg_scale: parameters.scale,
-          denoising_strength: parameters.strength,
-          seed: parameters.seed.toString(),
-          height: parameters.height,
-          width: parameters.width,
-          steps: parameters.steps,
-          n: parameters.batch_size,
-          seed_variation: 1,
-          karras: true //听说事魔法
-        },
-        nsfw: false,
-        censor_nsfw: false,
-        models: [
-          "Anything Diffusion" //后续会兼容
-        ]
-      }
+      const data = (() => {
+        const body = {
+          prompt: parameters.prompt + ' ### ' + parameters.uc,
+          nsfw: false,
+          censor_nsfw: false,
+          models: [
+            "Anything Diffusion" //后续会兼容
+          ],
+          params: {
+            sampler_name: 'k_euler_a', // sampler.sd[options.sampler],//TODO: 采样器名称匹配
+            cfg_scale: parameters.scale,
+            denoising_strength: parameters.strength,
+            seed: parameters.seed.toString(),
+            height: parameters.height,
+            width: parameters.width,
+            steps: parameters.steps,
+            n: parameters.batch_size,
+            seed_variation: 1,
+            karras: true //听说事魔法
+          }
+        }
+        if (image) {
+          logger.info(image?.base64)
+          body['source_image'] = image?.base64
+          body['source_processing'] = 'img2img'
+        }
+        return body
+      })()
 
       const request = () => ctx.http.axios(config.endpoint, {
         method: 'POST',
@@ -250,7 +255,6 @@ export function apply(ctx: Context, config: Config) {
           break
         } catch (err) {
           if (Quester.isAxiosError(err)) {
-            logger.error(err.response.data)
             if (err.code && err.code !== 'ETIMEDOUT' && ++count < config.maxRetryCount) {
               continue
             }

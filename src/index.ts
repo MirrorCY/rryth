@@ -202,6 +202,17 @@ export function apply(ctx: Context, config: Config) {
         ? session.text('.pending', [globalTasks.size])
         : session.text('.waiting'))
 
+      // ctx.http.axios('https://stablehorde.net/api/v2/status/models', {
+      //   method: 'GET',
+      //   timeout: config.requestTimeout
+      // }).then((res) => {
+      //   if (res.data ?) {
+      //     res.data[res.data.find(element => element.name === 'Anything Diffusion')]
+      //   }
+
+      //   session.send(session.text(res.data))
+      // })
+
       globalTasks.add(id)
       const cleanUp = () => {
         tasks[session.cid]?.delete(id)
@@ -229,7 +240,6 @@ export function apply(ctx: Context, config: Config) {
           }
         }
         if (image) {
-          logger.info(image?.base64)
           body['source_image'] = image?.base64
           body['source_processing'] = 'img2img'
         }

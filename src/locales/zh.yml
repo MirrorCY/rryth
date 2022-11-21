@@ -1,11 +1,10 @@
 commands:
   rryth:
-    description: 人人有图画计划
+    description: 人人有图画计划 1.1.1
     usage: |-
       输入 sai 空格关键词即可画画，关键词是用逗号分隔的英文
       示例 sai loli  示例 rryth tree
-      示例 sai -r 512x512 -t 28 -c 7 tree -u green
-      暂不支持图转图，关注后续更新
+      示例 sai -r 512x512 -t 28 -c 7 tree, yellow -u green
       本插件基于 https://github.com/koishijs/novelai-bot 修改完成，旨在提供免费画画方案，
       有问题欢迎提 issue 我会尝试尽快解决，也可以来这里提问 https://bot.novelai.dev/more.html
 

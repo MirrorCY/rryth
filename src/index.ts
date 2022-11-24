@@ -87,6 +87,8 @@ export function apply(ctx: Context, config: Config) {
 
   const cmd = ctx.command('rryth <prompts:text>')
     .alias('sai')
+    .alias('rr')
+    .alias('Rr')
     .userFields(['authority'])
     .option('model', '-m <model>', { type: models, hidden: thirdParty })
     .option('resolution', '-r <resolution>', { type: resolution })
@@ -146,11 +148,8 @@ export function apply(ctx: Context, config: Config) {
       const parameters: Dict = {
         seed,
         prompt,
-        n_samples: 1,
         uc,
-        batch_size: 1,
-        ucPreset: 2,
-        qualityToggle: false,
+        batch: options.batch ?? 1
       }
 
       if (imgUrl) {
@@ -233,10 +232,11 @@ export function apply(ctx: Context, config: Config) {
             height: parameters.height,
             width: parameters.width,
             steps: parameters.steps,
-            n: parameters.batch_size,
+            n: parameters.batch,
             karras: true //听说事魔法
           }
         }
+        logger.info(parameters.batch)
         if (image) {
           body['source_image'] = image?.base64
           body['source_processing'] = 'img2img'

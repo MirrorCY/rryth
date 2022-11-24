@@ -2,15 +2,13 @@
 
 [![downloads](https://img.shields.io/npm/dm/koishi-plugin-rryth?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-rryth) 
 
-### 修复了一个错误的 api 调用，它导致模型选择错误，请更新至 1.0.0
-
 本插件基于 [novelai-bot](https://github.com/koishijs/novelai-bot) 修改完成，使用 [stablehorde](https://stablehorde.net/) 进行 AI 图片生成。已实现功能：
 
-- 绘制图片
+- 绘制图片/批量绘制图片
 - 更改图片尺寸
 - 高级请求语法
 - 翻译中文关键词
-- 自定义违禁词表
+- 设置并自动过滤违禁词
 - 发送一段时间后自动撤回
 
 得益于 Koishi 的插件化机制，只需配合其他插件即可实现更多功能：

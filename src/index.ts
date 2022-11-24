@@ -233,10 +233,10 @@ export function apply(ctx: Context, config: Config) {
             width: parameters.width,
             steps: parameters.steps,
             n: parameters.batch,
+            seed_variation: 1,
             karras: true //听说事魔法
           }
         }
-        logger.info(parameters.batch)
         if (image) {
           body['source_image'] = image?.base64
           body['source_processing'] = 'img2img'

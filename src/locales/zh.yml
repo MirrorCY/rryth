@@ -1,6 +1,6 @@
 commands:
   rryth:
-    description: 人人有图画计划 1.1.1
+    description: 人人有图画计划 1.1.2
     usage: |-
       输入 sai 空格关键词即可画画，关键词是用逗号分隔的英文
       示例 sai loli  示例 rryth tree
@@ -10,6 +10,7 @@ commands:
 
 
     options:
+      batch: 一次生成多少张图(0-20)
       model: 设定生成模型(没做)
       resolution: 设定图片尺寸(768x768)
       sampler: 设置采样器(没做)

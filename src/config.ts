@@ -101,7 +101,7 @@ export interface Config extends PromptConfig {
   maxSteps?: number
   maxResolution?: number
   anatomy?: boolean
-  output?: 'minimal' | 'default' | 'verbose'
+  output?: 'default' | 'verbose'
   allowAnlas?: boolean | number
   endpoint?: string
   headers?: Dict<string>
@@ -145,9 +145,8 @@ export const Config = Schema.intersect([
 
   Schema.object({
     output: Schema.union([
-      Schema.const('minimal').description('只发送图片'),
-      Schema.const('default').description('发送图片和关键信息'),
-      Schema.const('verbose').description('发送全部信息'),
+      Schema.const('default').description('标准输出'),
+      Schema.const('verbose').description('详细输出'),
     ]).description('输出方式。').default('default'),
     maxRetryCount: Schema.natural().description('连接失败时最大的重试次数。').default(3),
     requestTimeout: Schema.number().role('time').description('当请求超过这个时间时会中止并提示超时。').default(Time.minute),

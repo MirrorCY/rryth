@@ -98,6 +98,7 @@ export function apply(ctx: Context, config: Config) {
     .option('noise', '-n <noise:number>', { hidden: restricted })
     .option('strength', '-N <strength:number>', { hidden: restricted })
     .option('undesired', '-u <undesired>')
+    .option('batch', '-b <batch_size>')
     .action(async ({ session, options }, input) => {
       if (!input?.trim()) return session.execute('help rryth')
 
@@ -147,9 +148,7 @@ export function apply(ctx: Context, config: Config) {
         prompt,
         n_samples: 1,
         uc,
-        // 0: low quality + bad anatomy
-        // 1: low quality
-        // 2: none
+        batch_size: 1,
         ucPreset: 2,
         qualityToggle: false,
       }
@@ -235,7 +234,6 @@ export function apply(ctx: Context, config: Config) {
             width: parameters.width,
             steps: parameters.steps,
             n: parameters.batch_size,
-            seed_variation: 1,
             karras: true //听说事魔法
           }
         }
@@ -254,10 +252,12 @@ export function apply(ctx: Context, config: Config) {
         },
         data,
       }).then((res) => {
-        return stripDataPrefix(res.data.generations[0].img)
+        return res.data.generations.map(item => {
+          return stripDataPrefix(item.img)
+        });
       })
 
-      let base64: string, count = 0
+      let base64: Array<string>, count = 0
       while (true) {
         try {
           base64 = await request()
@@ -274,10 +274,8 @@ export function apply(ctx: Context, config: Config) {
         }
       }
 
-      if (!base64.trim()) return session.text('.empty-response')
-
       function getContent() {
-        if (config.output === 'minimal') return segment.image('base64://' + base64)
+        // if (config.output === 'minimal') return segment.image('base64://' + base64)
         const attrs = {
           userId: session.userId,
           nickname: session.author?.nickname || session.username,
@@ -305,7 +303,9 @@ export function apply(ctx: Context, config: Config) {
         if (config.output === 'verbose') {
           result.children.push(segment('message', attrs, `undesired = ${uc}`))
         }
-        result.children.push(segment('message', attrs, segment.image('base64://' + base64)))
+
+        base64.forEach(item => { result.children.push(segment('message', attrs, segment.image('base64://' + item))) });
+
         return result
       }
 

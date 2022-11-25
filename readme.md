@@ -2,9 +2,12 @@
 
 [![downloads](https://img.shields.io/npm/dm/koishi-plugin-rryth?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-rryth) 
 
+### 1.2.0 版本发布，支持批量生成，支持自动超采样，出图更清晰
+
 本插件基于 [novelai-bot](https://github.com/koishijs/novelai-bot) 修改完成，使用 [stablehorde](https://stablehorde.net/) 进行 AI 图片生成。已实现功能：
 
 - 绘制图片/批量绘制图片
+- 自动超分辨率
 - 更改图片尺寸
 - 高级请求语法
 - 翻译中文关键词

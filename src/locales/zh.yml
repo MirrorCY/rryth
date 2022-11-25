@@ -1,6 +1,6 @@
 commands:
   rryth:
-    description: 人人有图画计划 1.1.4
+    description: 人人有图画计划 1.2.0
     usage: |-
       输入 sai 空格关键词即可画画，关键词是用逗号分隔的英文
       示例 sai loli  示例 rryth tree
@@ -8,18 +8,18 @@ commands:
       本插件基于 https://github.com/koishijs/novelai-bot 修改完成，旨在提供免费画画方案，
       有问题欢迎提 issue 我会尝试尽快解决，也可以来这里提问 https://bot.novelai.dev/more.html
 
-
     options:
-      batch: 一次生成多少张图(0-20)
-      model: 设定生成模型(没做)
+      batch: 一次生成多少张图(1-5)
+      model: 设定生成模型(当前仅支持 Anything3.0)
       resolution: 设定图片尺寸(768x768)
-      sampler: 设置采样器(没做)
+      sampler: 设置采样器(当前仅支持 k_lms)
       seed: 设置随机种子(随意一个数字)
       steps: 设置迭代步数(0-50)
       scale: 设置对输入的服从度(0-20)
       strength: 图片修改幅度，图转图专用(0-1)
-      noise: 图片噪声强度(没做)
-      undesired: 排除标签(其他参数加在 ai 和关键词中间，这个加在最后)
+      noise: 图片噪声强度(当前仅支持 0.75)
+      undesired: 排除标签(其他参数加在 sai 和关键词中间，这个加在最后)
+      override: 去除插件自带的人物美化关键词，通常用于非人物绘画或你提供了大量的关键词时
 
     messages:
       no-img2img: 暂不支持图转图，请关注后续更新

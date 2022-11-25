@@ -72,6 +72,12 @@ export function apply(ctx: Context, config: Config) {
     throw new Error()
   }
 
+  const batch = (source: string) => {
+    const value = +source
+    if (value * 0 === 0 && Math.floor(value) === value && value > 0 && value <= (config.maxBatch || 5)) return value
+    throw new Error()
+  }
+
   const resolution = (source: string, session: Session<'authority'>): Size => {
     if (source in orientMap) return orientMap[source]
     if (restricted(session)) throw new Error()
@@ -90,17 +96,17 @@ export function apply(ctx: Context, config: Config) {
     .alias('rr')
     .alias('Rr')
     .userFields(['authority'])
-    .option('model', '-m <model>', { type: models, hidden: thirdParty })
+    .option('model', '-m <model>', { type: models })
     .option('resolution', '-r <resolution>', { type: resolution })
     .option('override', '-O')
     .option('sampler', '-s <sampler>')
     .option('seed', '-x <seed:number>')
-    .option('steps', '-t <step>', { type: step, hidden: restricted })
+    .option('steps', '-t <step>', { type: step })
     .option('scale', '-c <scale:number>')
-    .option('noise', '-n <noise:number>', { hidden: restricted })
-    .option('strength', '-N <strength:number>', { hidden: restricted })
+    .option('noise', '-n <noise:number>')
+    .option('strength', '-N <strength:number>')
     .option('undesired', '-u <undesired>')
-    .option('batch', '-b <batch_size>')
+    .option('batch', '-b <batch:number>', {type: batch})
     .action(async ({ session, options }, input) => {
       if (!input?.trim()) return session.execute('help rryth')
 
@@ -225,7 +231,7 @@ export function apply(ctx: Context, config: Config) {
             "Anything Diffusion" //后续会兼容
           ],
           params: {
-            sampler_name: 'k_euler_a', // sampler.sd[options.sampler],//TODO: 采样器名称匹配
+            sampler_name: 'k_lms', // sampler.sd[options.sampler],//TODO: 采样器名称匹配
             cfg_scale: parameters.scale,
             denoising_strength: parameters.strength,
             seed: parameters.seed.toString(),
@@ -240,6 +246,9 @@ export function apply(ctx: Context, config: Config) {
         if (image) {
           body['source_image'] = image?.base64
           body['source_processing'] = 'img2img'
+        }
+        if(config.enableUpscale) {
+          body.params['post_processing'] = ['RealESRGAN_x4plus']
         }
         return body
       })()

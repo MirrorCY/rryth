@@ -99,10 +99,12 @@ export interface Config extends PromptConfig {
   orient?: Orient
   sampler?: string
   maxSteps?: number
+  maxBatch?: number
   maxResolution?: number
   anatomy?: boolean
   output?: 'default' | 'verbose'
   allowAnlas?: boolean | number
+  enableUpscale?: boolean
   endpoint?: string
   headers?: Dict<string>
   maxRetryCount?: number
@@ -111,13 +113,11 @@ export interface Config extends PromptConfig {
   maxConcurrency?: number
 }
 
-Schema.const('sd-webui' as const).description('sd-webui')
-
 export const Config = Schema.intersect([
 
   Schema.object({
-    endpoint: Schema.string().description('API 服务器地址。通常无需修改').default('https://stablehorde.net/api/v2/generate/sync'),
-    headers: Schema.dict(String).description('apikey 不想注册自己的可以默认。').default({apikey: '0000000000'}),
+    endpoint: Schema.string().description('API 服务器地址，通常无需修改。').default('https://stablehorde.net/api/v2/generate/sync'),
+    headers: Schema.dict(String).description('apikey 不想 [获取自己的](https://stablehorde.net/register) 可以默认。输入 0000000000 可以匿名。').default({apikey: 'Kd_oa9Oj7GJF7rGLYUH0xg'}),
   }),
 
   Schema.union([
@@ -137,8 +137,10 @@ export const Config = Schema.intersect([
 
   Schema.object({
     orient: Schema.union(orients).description('默认的图片方向。').default('portrait'),
-    maxSteps: Schema.natural().description('允许的最大迭代步数。').default(0),
-    maxResolution: Schema.natural().description('生成图片的最大尺寸。').default(0),
+    maxSteps: Schema.natural().description('允许的最大迭代步数。').default(50),
+    // maxBatch: Schema.natural().description('允许批量生成的图片数，通常默认值足够，增加此参数可能会成倍的提高服务器负载，并有可能最终导致大家都没图画，请三思。').default(5),
+    maxResolution: Schema.natural().description('生成图片的最大尺寸。').default(1024),
+    enableUpscale: Schema.boolean().description('是否启用超采样，降低出图速度，大幅提升出图质量。').default(false),
   }),
 
   PromptConfig,

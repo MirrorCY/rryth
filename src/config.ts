@@ -26,15 +26,8 @@ export const models = Object.keys(modelMap) as Model[]
 export const orients = Object.keys(orientMap) as Orient[]
 
 export namespace sampler {
-  export const nai = {
-    'k_euler_a': 'Euler ancestral',
-    'k_euler': 'Euler',
-    'k_lms': 'LMS',
-    'ddim': 'DDIM',
-    'plms': 'PLMS',
-  }
 
-  export const sd = {
+  export const sdh = {
     'k_euler_a': 'Euler a',
     'k_euler': 'Euler',
     'k_lms': 'LMS',
@@ -44,7 +37,8 @@ export namespace sampler {
     'k_dpmpp_2s_a': 'DPM++ 2S a',
     'k_dpmpp_2m': 'DPM++ 2M',
     'k_dpm_fast': 'DPM fast',
-    'k_dpm_adaptive': 'DPM adaptive'
+    'k_dpm_adaptive': 'DPM adaptive',
+    'dpmsolver': 'DPM solver'
   }
 
   export function createSchema(map: Dict<string>) {
@@ -80,14 +74,14 @@ export interface PromptConfig {
 export const PromptConfig: Schema<PromptConfig> = Schema.object({
   basePrompt: Schema.string().role('textarea').description('默认附加的标签。').default('masterpiece, best quality'),
   negativePrompt: Schema.string().role('textarea').description('默认附加的反向标签。').default(ucPreset),
-  forbidden: Schema.string().role('textarea').description('违禁词列表。含有违禁词的请求将被拒绝。').default(''),
+  forbidden: Schema.string().role('textarea').description('违禁词列表。请求中的违禁词将会被自动删除。').default(''),
   placement: Schema.union([
     Schema.const('before' as const).description('置于最前'),
     Schema.const('after' as const).description('置于最后'),
   ]).description('默认附加标签的位置。').default('after'),
   translator: Schema.boolean().description('是否启用自动翻译。').default(false),
   latinOnly: Schema.boolean().description('是否只接受英文输入。').default(true),
-  maxWords: Schema.natural().description('允许的最大单词数量。').default(0),
+  maxWords: Schema.natural().description('允许的最大单词数量。').default(75),
 }).description('输入设置')
 
 export interface Config extends PromptConfig {
@@ -117,21 +111,17 @@ export const Config = Schema.intersect([
 
   Schema.object({
     endpoint: Schema.string().description('API 服务器地址，通常无需修改。').default('https://stablehorde.net/api/v2/generate/sync'),
-    headers: Schema.dict(String).description('apikey 不想 [获取自己的](https://stablehorde.net/register) 可以默认。输入 0000000000 可以匿名。').default({apikey: 'Kd_oa9Oj7GJF7rGLYUH0xg'}),
+    headers: Schema.dict(String).description('apikey 不想 [获取自己的](https://stablehorde.net/register) 可以默认。').default({apikey: 'Kd_oa9Oj7GJF7rGLYUH0xg'}),
   }),
 
   Schema.union([
     Schema.object({
       type: Schema.const('sd-webui'),
-      sampler: sampler.createSchema(sampler.sd),
-    }).description('参数设置'),
-    Schema.object({
-      type: Schema.const('naifu'),
-      sampler: sampler.createSchema(sampler.nai),
+      sampler: sampler.createSchema(sampler.sdh),
     }).description('参数设置'),
     Schema.object({
       model: Schema.union(models).description('默认的生成模型。').default('nai'),
-      sampler: sampler.createSchema(sampler.nai),
+      sampler: sampler.createSchema(sampler.sdh),
     }).description('参数设置'),
   ] as const),
 

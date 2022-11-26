@@ -94,7 +94,7 @@ export function apply(ctx: Context, config: Config) {
   const cmd = ctx.command('rryth <prompts:text>')
     .alias('sai')
     .alias('rr')
-    .alias('Rr')
+    .alias('人人')
     .userFields(['authority'])
     .option('model', '-m <model>', { type: models })
     .option('resolution', '-r <resolution>', { type: resolution })
@@ -103,7 +103,6 @@ export function apply(ctx: Context, config: Config) {
     .option('seed', '-x <seed:number>')
     .option('steps', '-t <step>', { type: step })
     .option('scale', '-c <scale:number>')
-    .option('noise', '-n <noise:number>')
     .option('strength', '-N <strength:number>')
     .option('undesired', '-u <undesired>')
     .option('batch', '-b <batch:number>', {type: batch})
@@ -178,7 +177,6 @@ export function apply(ctx: Context, config: Config) {
         Object.assign(parameters, {
           height: options.resolution.height,
           width: options.resolution.width,
-          noise: options.noise ?? 0.2,
           strength: options.strength ?? 0.7,
         })
 
@@ -231,7 +229,7 @@ export function apply(ctx: Context, config: Config) {
             "Anything Diffusion" //后续会兼容
           ],
           params: {
-            sampler_name: 'k_lms', // sampler.sd[options.sampler],//TODO: 采样器名称匹配
+            sampler_name: Object.keys(sampler.sdh)[options.sampler],
             cfg_scale: parameters.scale,
             denoising_strength: parameters.strength,
             seed: parameters.seed.toString(),
@@ -332,6 +330,6 @@ export function apply(ctx: Context, config: Config) {
   ctx.accept(['model', 'orient', 'sampler'], (config) => {
     cmd._options.model.fallback = config.model
     cmd._options.sampler.fallback = config.sampler
-    cmd._options.sampler.type = Object.keys(sampler.sd)
+    cmd._options.sampler.type = Object.keys(sampler.sdh)
   }, { immediate: true })
 }

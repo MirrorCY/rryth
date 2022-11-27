@@ -1,7 +1,7 @@
 import { Context, Dict, Logger, Quester, segment, Session } from 'koishi'
 import { Config, modelMap, models, orientMap, parseForbidden, parseInput, sampler } from './config'
 import { ImageData } from './types'
-import { closestMultiple, download, getImageSize, login, NetworkError, resizeInput, Size, stripDataPrefix } from './utils'
+import { closestMultiple, download, getImageSize, NetworkError, resizeInput, Size } from './utils'
 import { } from '@koishijs/translator'
 import { } from '@koishijs/plugin-help'
 
@@ -50,10 +50,6 @@ export function apply(ctx: Context, config: Config) {
   ctx.accept(['forbidden'], (config) => {
     forbidden = parseForbidden(config.forbidden)
   }, { immediate: true })
-
-  let tokenTask: Promise<string> = null
-  const getToken = () => tokenTask ||= login(ctx)
-  ctx.accept(['token', 'type', 'email', 'password'], () => tokenTask = null)
 
   const thirdParty = () => !['login', 'token'].includes(config.type)
 
@@ -105,7 +101,7 @@ export function apply(ctx: Context, config: Config) {
     .option('scale', '-c <scale:number>')
     .option('strength', '-N <strength:number>')
     .option('undesired', '-u <undesired>')
-    .option('batch', '-b <batch:number>', {type: batch})
+    .option('batch', '-b <batch:number>', { type: batch })
     .action(async ({ session, options }, input) => {
       if (!input?.trim()) return session.execute('help rryth')
 
@@ -135,17 +131,6 @@ export function apply(ctx: Context, config: Config) {
 
       const [errPath, prompt, uc] = parseInput(input, config, forbidden, options.override)
       if (errPath) return session.text(errPath)
-
-      let token: string
-      try {
-        token = await getToken()
-      } catch (err) {
-        if (err instanceof NetworkError) {
-          return session.text(err.message, err.params)
-        }
-        logger.error(err)
-        return session.text('.unknown-error')
-      }
 
       const model = modelMap[options.model]
       const seed = options.seed || Math.floor(Math.random() * Math.pow(2, 32))
@@ -225,9 +210,7 @@ export function apply(ctx: Context, config: Config) {
           prompt: parameters.prompt + ' ### ' + parameters.uc,
           nsfw: false,
           censor_nsfw: false,
-          models: [
-            "Anything Diffusion" //后续会兼容
-          ],
+          models: [parameters.model ?? model],
           params: {
             sampler_name: Object.keys(sampler.sdh)[options.sampler],
             cfg_scale: parameters.scale,
@@ -245,7 +228,7 @@ export function apply(ctx: Context, config: Config) {
           body['source_image'] = image?.base64
           body['source_processing'] = 'img2img'
         }
-        if(config.enableUpscale) {
+        if (config.enableUpscale) {
           body.params['post_processing'] = ['RealESRGAN_x4plus']
         }
         return body
@@ -259,15 +242,13 @@ export function apply(ctx: Context, config: Config) {
         },
         data,
       }).then((res) => {
-        return res.data.generations.map(item => {
-          return stripDataPrefix(item.img)
-        });
+        return res.data
       })
 
-      let base64: Array<string>, count = 0
+      let ret, count = 0  //any 是不好的  //会改的
       while (true) {
         try {
-          base64 = await request()
+          ret = await request()
           cleanUp()
           break
         } catch (err) {
@@ -288,11 +269,10 @@ export function apply(ctx: Context, config: Config) {
           nickname: session.author?.nickname || session.username,
         }
         const result = segment('figure')
-        const lines = [`seed = ${seed}`]
+        const lines = [`种子 = ${seed}`]
         if (config.output === 'verbose') {
-          if (!thirdParty()) {
-            lines.push(`model = ${model}`)
-          }
+
+          lines.push(`model = ${model}`)
           lines.push(
             `sampler = ${options.sampler}`,
             `steps = ${parameters.steps}`,
@@ -306,12 +286,16 @@ export function apply(ctx: Context, config: Config) {
           }
         }
         result.children.push(segment('message', attrs, lines.join('\n')))
-        result.children.push(segment('message', attrs, `prompt = ${prompt}`))
+        result.children.push(segment('message', attrs, `关键词 = ${prompt}`))
         if (config.output === 'verbose') {
-          result.children.push(segment('message', attrs, `undesired = ${uc}`))
+          result.children.push(segment('message', attrs, `排除关键词 = ${uc}`))
+          result.children.push(segment('message', attrs, `消耗点数 = ${ret.kudos}`))
         }
 
-        base64.forEach(item => { result.children.push(segment('message', attrs, segment.image('base64://' + item))) });
+        ret.generations.forEach(item => {
+          result.children.push(segment('message', attrs, segment.image('base64://' + item.img)))
+          if (config.output === 'verbose') result.children.push(segment('message', attrs, `工作站名称 = ${item.worker_name}`)) 
+        });
 
         return result
       }

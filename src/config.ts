@@ -2,9 +2,11 @@ import { Dict, Schema, Time } from 'koishi'
 import { Size } from './utils'
 
 export const modelMap = {
-  safe: 'safe-diffusion',
-  nai: 'nai-diffusion',
-  furry: 'nai-diffusion-furry',
+  'Anything 3.0': 'Anything Diffusion',
+  'Hentai Diffusion': 'Hentai Diffusion',
+  'Stable Diffusion 1.5': 'stable_diffusion',
+  'Stable Diffusion 2.0': 'stable_diffusion_2.0',
+  'Midjourney Diffusion': 'Midjourney Diffusion',
 } as const
 
 export const orientMap = {
@@ -108,7 +110,6 @@ export interface Config extends PromptConfig {
 }
 
 export const Config = Schema.intersect([
-
   Schema.object({
     endpoint: Schema.string().description('API 服务器地址，通常无需修改。').default('https://stablehorde.net/api/v2/generate/sync'),
     headers: Schema.dict(String).description('apikey 不想 [获取自己的](https://stablehorde.net/register) 可以默认。').default({apikey: 'Kd_oa9Oj7GJF7rGLYUH0xg'}),
@@ -116,11 +117,7 @@ export const Config = Schema.intersect([
 
   Schema.union([
     Schema.object({
-      type: Schema.const('sd-webui'),
-      sampler: sampler.createSchema(sampler.sdh),
-    }).description('参数设置'),
-    Schema.object({
-      model: Schema.union(models).description('默认的生成模型。').default('nai'),
+      model: Schema.union(models).description('默认的生成模型。[Models 中有介绍和更多模型](https://aqualxx.github.io/stable-ui/workers) 如果有你想要但是没加进来的模型，[加群](https://simx.elchapo.cn/NovelAI.png)大喊 42').default('Anything 3.0'),
       sampler: sampler.createSchema(sampler.sdh),
     }).description('参数设置'),
   ] as const),

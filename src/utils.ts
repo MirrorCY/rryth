@@ -4,7 +4,7 @@ import {
   crypto_pwhash_ALG_ARGON2ID13, crypto_pwhash_SALTBYTES, ready,
 } from 'libsodium-wrappers'
 import imageSize from 'image-size'
-import { ImageData, Subscription } from './types'
+import { ImageData } from './types'
 
 export function project(object: {}, mapping: {}) {
   const result = {}
@@ -121,22 +121,6 @@ export class NetworkError extends Error {
   }
 }
 
-export async function login(ctx: Context): Promise<string> {
-  if (ctx.config.type === 'token') {
-    await ctx.http.get<Subscription>(ctx.config.endpoint + '/user/subscription', {
-      timeout: 30000,
-      headers: { authorization: 'Bearer ' + ctx.config.token },
-    }).catch(NetworkError.catch({ 401: '.invalid-token' }))
-    return ctx.config.token
-  } else if (ctx.config.type === 'login' && process.env.KOISHI_ENV !== 'browser') {
-    return ctx.http.post(ctx.config.endpoint + '/user/login', {
-      timeout: 30000,
-      key: await calcAccessKey(ctx.config.email, ctx.config.password),
-    }).catch(NetworkError.catch({ 401: '.invalid-password' })).then(res => res.accessToken)
-  } else {
-    return ctx.config.token
-  }
-}
 
 export function closestMultiple(num: number, mult = 64) {
   const floor = Math.floor(num / mult) * mult
@@ -188,8 +172,4 @@ export function resizeInput(size: Size): Size {
   }
 }
 
-export function stripDataPrefix(base64: string) {
-  // workaround for different gradio versions
-  // https://github.com/koishijs/novelai-bot/issues/90
-  return base64.replace(/^data:image\/[\w-]+;base64,/, '')
-}
+

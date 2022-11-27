@@ -24,19 +24,6 @@ export interface PaymentProcessorData {
   u: string
 }
 
-export interface TrainingStepsLeft {
-  fixedTrainingStepsLeft: number
-  purchasedTrainingSteps: number
-}
-
-export interface Subscription {
-  tier: number
-  active: boolean
-  expiresAt: number
-  perks: Perks
-  paymentProcessorData: PaymentProcessorData
-  trainingStepsLeft: TrainingStepsLeft
-}
 
 export interface ImageData {
   buffer: ArrayBuffer

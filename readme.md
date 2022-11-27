@@ -2,6 +2,7 @@
 
 [![downloads](https://img.shields.io/npm/dm/koishi-plugin-rryth?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-rryth) 
 
+### 1.3.0 版本发布，支持切换模型，支持采样器选择，优化帮助信息
 ### 1.2.0 版本发布，支持批量生成，支持自动超采样，出图更清晰
 
 本插件基于 [novelai-bot](https://github.com/koishijs/novelai-bot) 修改完成，使用 [stablehorde](https://stablehorde.net/) 进行 AI 图片生成。已实现功能：
@@ -28,4 +29,7 @@
 - 在沙盒里输入 `sai` 即可看到此插件的帮助啦
 
 有任何问题都可以提 issue 我会尽快回复~
-没有 Github 账号的小伙伴可以来群里找我 https://bot.novelai.dev/more.html
+
+没有 Github 账号的小伙伴可以来群里找我 @42
+
+![QR](https://simx.elchapo.cn/NovelAI.png)

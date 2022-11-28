@@ -1,7 +1,8 @@
 commands:
   rryth:
-    description: 人人有图画计划 1.4.0
+    description: 人人有图画计划 1.4.1 noSharp
     usage: |-
+      已知问题 noSharp 版无法在 QQ 电脑端查看图片，请关注更新
       输入 sai 空格提示词即可画画，提示词是用逗号分隔的英文
       新增默认 apikey ，移除并重新添加插件可以出图更快
       示例 sai -r 512x512 -t 28 -c 7 tree, yellow -u green

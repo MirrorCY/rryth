@@ -4,7 +4,7 @@ import { ImageData } from './types'
 import { closestMultiple, download, getImageSize, NetworkError, resizeInput, Size } from './utils'
 import { } from '@koishijs/translator'
 import { } from '@koishijs/plugin-help'
-import sharp from 'sharp'
+// import sharp from 'sharp'
 
 
 export * from './config'
@@ -289,23 +289,24 @@ export function apply(ctx: Context, config: Config) {
           result.children.push(segment('message', attrs, `排除关键词 = ${uc}`))
           result.children.push(segment('message', attrs, `消耗点数 = ${ret.kudos}`))
         }
-        
+
         await Promise.all(
-        ret.generations.map(async item => {
-          let buffer = Buffer.from(item.img, 'base64')
-          await sharp(buffer)
-            .png()
-            .normalise()
-            .modulate({
-              saturation: 1.1
-            })
-            .toBuffer()
-            .then(data => {
-              result.children.push(segment('message', attrs, segment.image(data)))
-            })
-            .catch(err => { logger.error(err) })
-          if (config.output === 'verbose') result.children.push(segment('message', attrs, `工作站名称 = ${item.worker_name}`))
-        }))
+          ret.generations.map(async item => {
+            // let buffer = Buffer.from(item.img, 'base64')
+            // await sharp(buffer)
+            //   .png()
+            //   .normalise()
+            //   .modulate({
+            //     saturation: 1.1
+            //   })
+            //   .toBuffer()
+            //   .then(data => {
+            //     result.children.push(segment('message', attrs, segment.image(data)))
+            //   })
+            //   .catch(err => { logger.error(err) })
+            result.children.push(segment('message', attrs, segment.image('base64://' + item.img)))
+            if (config.output === 'verbose') result.children.push(segment('message', attrs, `工作站名称 = ${item.worker_name}`))
+          }))
 
         return result
       }

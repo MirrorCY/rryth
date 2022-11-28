@@ -4,6 +4,8 @@ import { ImageData } from './types'
 import { closestMultiple, download, getImageSize, NetworkError, resizeInput, Size } from './utils'
 import { } from '@koishijs/translator'
 import { } from '@koishijs/plugin-help'
+import sharp from 'sharp'
+
 
 export * from './config'
 
@@ -39,9 +41,6 @@ interface Forbidden {
 
 export function apply(ctx: Context, config: Config) {
   ctx.i18n.define('zh', require('./locales/zh'))
-  ctx.i18n.define('zh-tw', require('./locales/zh-tw'))
-  ctx.i18n.define('en', require('./locales/en'))
-  ctx.i18n.define('fr', require('./locales/fr'))
 
   let forbidden: Forbidden[]
   const tasks: Dict<Set<string>> = Object.create(null)
@@ -162,7 +161,7 @@ export function apply(ctx: Context, config: Config) {
         Object.assign(parameters, {
           height: options.resolution.height,
           width: options.resolution.width,
-          strength: options.strength ?? 0.7,
+          strength: options.strength ?? 0.3,
         })
 
       } else {
@@ -170,8 +169,8 @@ export function apply(ctx: Context, config: Config) {
         Object.assign(parameters, {
           height: options.resolution.height,
           width: options.resolution.width,
-          scale: options.scale ?? 11,
-          steps: options.steps ?? 28,
+          scale: options.scale ?? 7,
+          steps: options.steps ?? 20,
         })
       }
 
@@ -262,7 +261,7 @@ export function apply(ctx: Context, config: Config) {
         }
       }
 
-      function getContent() {
+      async function getContent() {
         // if (config.output === 'minimal') return segment.image('base64://' + base64)
         const attrs = {
           userId: session.userId,
@@ -274,14 +273,13 @@ export function apply(ctx: Context, config: Config) {
 
           lines.push(`model = ${model}`)
           lines.push(
-            `sampler = ${options.sampler}`,
-            `steps = ${parameters.steps}`,
-            `scale = ${parameters.scale}`,
+            `采样器 = ${options.sampler}`,
+            `迭代步数 = ${parameters.steps}`,
+            `提示词相关度 = ${parameters.scale}`,
           )
           if (parameters.image) {
             lines.push(
-              `strength = ${parameters.strength}`,
-              `noise = ${parameters.noise}`,
+              `图转图强度 = ${parameters.strength}`,
             )
           }
         }
@@ -291,16 +289,28 @@ export function apply(ctx: Context, config: Config) {
           result.children.push(segment('message', attrs, `排除关键词 = ${uc}`))
           result.children.push(segment('message', attrs, `消耗点数 = ${ret.kudos}`))
         }
-
-        ret.generations.forEach(item => {
-          result.children.push(segment('message', attrs, segment.image('base64://' + item.img)))
-          if (config.output === 'verbose') result.children.push(segment('message', attrs, `工作站名称 = ${item.worker_name}`)) 
-        });
+        
+        await Promise.all(
+        ret.generations.map(async item => {
+          let buffer = Buffer.from(item.img, 'base64')
+          await sharp(buffer)
+            .png()
+            .normalise()
+            .modulate({
+              saturation: 1.1
+            })
+            .toBuffer()
+            .then(data => {
+              result.children.push(segment('message', attrs, segment.image(data)))
+            })
+            .catch(err => { logger.error(err) })
+          if (config.output === 'verbose') result.children.push(segment('message', attrs, `工作站名称 = ${item.worker_name}`))
+        }))
 
         return result
       }
 
-      const ids = await session.send(getContent())
+      const ids = await session.send(await getContent())
 
       if (config.recallTimeout) {
         ctx.setTimeout(() => {

@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-rryth",
   "description": "Generate images by stablehorde",
-  "version": "1.4.0",
+  "version": "1.4.1-noSharp",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [

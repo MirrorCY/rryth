@@ -4,7 +4,7 @@ import { ImageData } from './types'
 import { closestMultiple, download, getImageSize, NetworkError, resizeInput, Size } from './utils'
 import { } from '@koishijs/translator'
 import { } from '@koishijs/plugin-help'
-import sharp from 'sharp'
+import sharp from '@mirror_cy/sharp'
 
 
 export * from './config'
@@ -207,8 +207,8 @@ export function apply(ctx: Context, config: Config) {
       const data = (() => {
         const body = {
           prompt: parameters.prompt + ' ### ' + parameters.uc,
-          nsfw: false,
-          censor_nsfw: false,
+          nsfw: config.nsfw,
+          censor_nsfw: !config.nsfw,
           models: [parameters.model ?? model],
           params: {
             sampler_name: Object.keys(sampler.sdh)[options.sampler],
@@ -289,16 +289,16 @@ export function apply(ctx: Context, config: Config) {
           result.children.push(segment('message', attrs, `排除关键词 = ${uc}`))
           result.children.push(segment('message', attrs, `消耗点数 = ${ret.kudos}`))
         }
-        
+
         await Promise.all(
         ret.generations.map(async item => {
           let buffer = Buffer.from(item.img, 'base64')
           await sharp(buffer)
-            .png()
-            .normalise()
             .modulate({
-              saturation: 1.1
+              saturation: 1.2
             })
+            .normalise()
+            .png()
             .toBuffer()
             .then(data => {
               result.children.push(segment('message', attrs, segment.image(data)))

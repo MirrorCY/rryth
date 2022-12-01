@@ -69,6 +69,7 @@ export interface PromptConfig {
   forbidden?: string
   placement?: 'before' | 'after'
   latinOnly?: boolean
+  nsfw?: boolean
   translator?: boolean
   maxWords?: number
 }
@@ -81,9 +82,9 @@ export const PromptConfig: Schema<PromptConfig> = Schema.object({
     Schema.const('before' as const).description('置于最前'),
     Schema.const('after' as const).description('置于最后'),
   ]).description('默认附加标签的位置。').default('after'),
+  nsfw: Schema.boolean().description('是否允许 R18 内容。没有任何方法能完全避免 R18, 人民的智慧是无限的。').default(false),
   translator: Schema.boolean().description('是否启用自动翻译。').default(false),
   latinOnly: Schema.boolean().description('是否只接受英文输入。').default(true),
-  maxWords: Schema.natural().description('允许的最大单词数量。').default(75),
 }).description('输入设置')
 
 export interface Config extends PromptConfig {
@@ -117,7 +118,9 @@ export const Config = Schema.intersect([
 
   Schema.union([
     Schema.object({
-      model: Schema.union(models).description('默认的生成模型。[Models 中有介绍和更多模型](https://aqualxx.github.io/stable-ui/workers) 如果有你想要但是没加进来的模型，[加群](https://simx.elchapo.cn/NovelAI.png)大喊 42').default('Anything 3.0'),
+      model: Schema.union(models).description('默认的生成模型。[Models 中有介绍和更多模型](https://aqualxx.github.io/stable-ui/workers) <br /> '+
+      '如果有你想要但是没加进来的模型，[加群](https://simx.elchapo.cn/NovelAI.png)大喊 42 <br /> '+
+      '下一个版本将空格修改为下划线，需要进来重新配置默认模型，否则无法启动插件').default('Anything 3.0'),
       sampler: sampler.createSchema(sampler.sdh),
     }).description('参数设置'),
   ] as const),
@@ -127,7 +130,7 @@ export const Config = Schema.intersect([
     maxSteps: Schema.natural().description('允许的最大迭代步数。').default(50),
     // maxBatch: Schema.natural().description('允许批量生成的图片数，通常默认值足够，增加此参数可能会成倍的提高服务器负载，并有可能最终导致大家都没图画，请三思。').default(5),
     maxResolution: Schema.natural().description('生成图片的最大尺寸。').default(1024),
-    enableUpscale: Schema.boolean().description('是否启用超采样，降低出图速度，大幅提升出图质量。').default(false),
+    enableUpscale: Schema.boolean().description('是否启用超采样，降低出图速度，大幅提升出图质量。').default(true),
   }),
 
   PromptConfig,
@@ -226,7 +229,7 @@ export function parseInput(input: string, config: Config, forbidden: Forbidden[]
     return true
   })
 
-  if (Math.max(getWordCount(positive), getWordCount(negative)) > (config.maxWords || Infinity)) {
+  if (Math.max(getWordCount(positive), getWordCount(negative)) > 75) {
     return ['.too-many-words']
   }
 

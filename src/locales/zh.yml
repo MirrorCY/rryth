@@ -10,7 +10,7 @@ commands:
 
     options:
       batch: 生成多少张图(1-5)
-      model: 设定生成模型
+      model: 设定生成模型('Stable Diffusion 2.0')
       resolution: 设定图片尺寸(512x768)
       sampler: 设置采样器
       seed: 设置随机种子(随意一个数字)

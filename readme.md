@@ -1,7 +1,8 @@
 # [koishi-plugin-rryth](https://github.com/MirrorCY/rryth)
 
-[![downloads](https://img.shields.io/npm/dm/koishi-plugin-rryth?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-rryth) 
+[![downloads](https://img.shields.io/npm/dm/koishi-plugin-rryth?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-rryth)
 
+### 1.5.0 版本发布，修复了安装失败的问题，新增 R18 开关
 ### 1.4.0 版本发布，QQ 电脑版也能正常使用啦，同时优化了画质，不再灰蒙蒙
 ### 1.3.0 版本发布，支持切换模型，支持采样器选择，优化帮助信息
 ### 1.2.0 版本发布，支持批量生成，支持自动超采样，出图更清晰

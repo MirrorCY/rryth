@@ -82,13 +82,13 @@ export const PromptConfig: Schema<PromptConfig> = Schema.object({
     Schema.const('before' as const).description('置于最前'),
     Schema.const('after' as const).description('置于最后'),
   ]).description('默认附加标签的位置。').default('after'),
-  nsfw: Schema.boolean().description('是否允许 R18 内容。没有任何方法能完全避免 R18, 人民的智慧是无限的。').default(false),
+  nsfw: Schema.boolean().description('是否跳过 R18 审查，没什么明显作用。').default(false),
   translator: Schema.boolean().description('是否启用自动翻译。').default(false),
   latinOnly: Schema.boolean().description('是否只接受英文输入。').default(true),
 }).description('输入设置')
 
 export interface Config extends PromptConfig {
-  type: 'token' | 'login' | 'naifu' | 'sd-webui'
+  updateInfo?: boolean
   token?: string
   email?: string
   password?: string
@@ -112,15 +112,16 @@ export interface Config extends PromptConfig {
 
 export const Config = Schema.intersect([
   Schema.object({
-    endpoint: Schema.string().description('API 服务器地址，通常无需修改。').default('https://stablehorde.net/api/v2/generate/sync'),
-    headers: Schema.dict(String).description('apikey 不想 [获取自己的](https://stablehorde.net/register) 可以默认。').default({apikey: 'Kd_oa9Oj7GJF7rGLYUH0xg'}),
+    updateInfo: Schema.boolean().description('关闭更新提示，谢谢你喜欢人人有图画项目！(目前插件有点小问题，所有设置需要重启 koishi 才能应用，期待更新。)').default(false),
+    // endpoint: Schema.string().description('API 服务器地址，通常无需修改。').default('https://stablehorde.net/api/v2/generate/sync'),
+    // headers: Schema.dict(String).description('apikey 不想 [获取自己的](https://stablehorde.net/register) 可以默认。').default({ apikey: 'Kd_oa9Oj7GJF7rGLYUH0xg' }),
   }),
 
   Schema.union([
     Schema.object({
-      model: Schema.union(models).description('默认的生成模型。[Models 中有介绍和更多模型](https://aqualxx.github.io/stable-ui/workers) <br /> '+
-      '如果有你想要但是没加进来的模型，[加群](https://simx.elchapo.cn/NovelAI.png)大喊 42 <br /> '+
-      '下一个版本将空格修改为下划线，需要进来重新配置默认模型，否则无法启动插件').default('Anything 3.0'),
+      model: Schema.union(models).description('默认的生成模型。[Models 中有介绍和更多模型](https://aqualxx.github.io/stable-ui/workers) <br /> ' +
+        '如果有你想要但是没加进来的模型，[加群](https://simx.elchapo.cn/NovelAI.png)大喊 42 <br /> ' +
+        '下一个版本将空格修改为下划线，需要进来重新配置默认模型，否则无法启动插件').default('Anything 3.0'),
       sampler: sampler.createSchema(sampler.sdh),
     }).description('参数设置'),
   ] as const),
@@ -175,15 +176,9 @@ export function parseInput(input: string, config: Config, forbidden: Forbidden[]
     .replace(/（/g, '(')
     .replace(/）/g, ')')
 
-  if (config.type === 'sd-webui') {
-    input = input
-      .split('\\{').map(s => s.replace(/\{/g, '(')).join('\\{')
-      .split('\\}').map(s => s.replace(/\}/g, ')')).join('\\}')
-  } else {
-    input = input
-      .split('\\(').map(s => s.replace(/\(/g, '{')).join('\\(')
-      .split('\\)').map(s => s.replace(/\)/g, '}')).join('\\)')
-  }
+  input = input
+    .split('\\{').map(s => s.replace(/\{/g, '(')).join('\\{')
+    .split('\\}').map(s => s.replace(/\}/g, ')')).join('\\}')
 
   input = input
     .replace(backslash, '\\')

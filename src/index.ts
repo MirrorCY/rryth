@@ -1,10 +1,9 @@
 import { Context, Dict, Logger, Quester, segment, Session } from 'koishi'
 import { Config, modelMap, models, orientMap, parseForbidden, parseInput, sampler } from './config'
 import { ImageData } from './types'
-import { closestMultiple, download, getImageSize, NetworkError, resizeInput, Size } from './utils'
+import { closestMultiple, download, getImageSize, NetworkError, resizeInput, Size, stripDataPrefix } from './utils'
 import { } from '@koishijs/translator'
 import { } from '@koishijs/plugin-help'
-import sharp from '@mirror_cy/sharp'
 
 
 export * from './config'
@@ -50,16 +49,7 @@ export function apply(ctx: Context, config: Config) {
     forbidden = parseForbidden(config.forbidden)
   }, { immediate: true })
 
-  const thirdParty = () => !['login', 'token'].includes(config.type)
-
-  const restricted = (session: Session<'authority'>) => {
-    if (thirdParty()) return false
-    if (typeof config.allowAnlas === 'boolean') {
-      return !config.allowAnlas
-    } else {
-      return session.user.authority < config.allowAnlas
-    }
-  }
+  const restricted = (session: Session<'authority'>) => false
 
   const step = (source: string) => {
     const value = +source
@@ -89,7 +79,6 @@ export function apply(ctx: Context, config: Config) {
   const cmd = ctx.command('rryth <prompts:text>')
     .alias('sai')
     .alias('rr')
-    .alias('人人')
     .userFields(['authority'])
     .option('model', '-m <model>', { type: models })
     .option('resolution', '-r <resolution>', { type: resolution })
@@ -102,6 +91,12 @@ export function apply(ctx: Context, config: Config) {
     .option('undesired', '-u <undesired>')
     .option('batch', '-b <batch:number>', { type: batch })
     .action(async ({ session, options }, input) => {
+
+      if (!config.updateInfo) session.send(
+        ['人人有图画插件准备迁移至自建服务器，请搭建 rryth bot 的大佬们，和有需求使用 rryth 插件的小伙伴加群，我们今晚讨论一下创建自己的部落，看看大家的需求。',
+          '点击链接加入群聊【rryth 人人有图画】：https://jq.qq.com/?_wv=1027&k=TyGZEtOM ',
+          ' <image url="https://simx.elchapo.cn/Koishi/rryth.png"/> ', '此提示可以在插件设置中关闭 ~~~'].join('\n'))
+
       if (!input?.trim()) return session.execute('help rryth')
 
       let imgUrl: string, image: ImageData
@@ -188,17 +183,6 @@ export function apply(ctx: Context, config: Config) {
         ? session.text('.pending', [globalTasks.size])
         : session.text('.waiting'))
 
-      // ctx.http.axios('https://stablehorde.net/api/v2/status/models', {
-      //   method: 'GET',
-      //   timeout: config.requestTimeout
-      // }).then((res) => {
-      //   if (res.data ?) {
-      //     res.data[res.data.find(element => element.name === 'Anything Diffusion')]
-      //   }
-
-      //   session.send(session.text(res.data))
-      // })
-
       globalTasks.add(id)
       const cleanUp = () => {
         tasks[session.cid]?.delete(id)
@@ -206,34 +190,22 @@ export function apply(ctx: Context, config: Config) {
       }
       const data = (() => {
         const body = {
-          prompt: parameters.prompt + ' ### ' + parameters.uc,
-          nsfw: config.nsfw,
-          censor_nsfw: !config.nsfw,
-          models: [parameters.model ?? model],
-          params: {
-            sampler_name: Object.keys(sampler.sdh)[options.sampler],
-            cfg_scale: parameters.scale,
-            denoising_strength: parameters.strength,
-            seed: parameters.seed.toString(),
-            height: parameters.height,
-            width: parameters.width,
-            steps: parameters.steps,
-            n: parameters.batch,
-            seed_variation: 1,
-            karras: true //听说事魔法
-          }
-        }
-        if (image) {
-          body['source_image'] = image?.base64
-          body['source_processing'] = 'img2img'
-        }
-        if (config.enableUpscale) {
-          body.params['post_processing'] = ['RealESRGAN_x4plus']
+          sampler_index: Object.keys(sampler.sdh)[options.sampler],
+          init_images: image && [image.dataUrl],
+          prompt: parameters.prompt,
+          batch_size: parameters.batch,
+          seed: parameters.seed,
+          negative_prompt: parameters.uc,
+          cfg_scale: parameters.scale,
+          steps: parameters.steps,
+          width: parameters.width,
+          height: parameters.height,
+          denoising_strength: parameters.strength,
         }
         return body
       })()
 
-      const request = () => ctx.http.axios(config.endpoint, {
+      const request = () => ctx.http.axios(image ? 'https://sdapi.elchapo.cn/sdapi/v1/img2img' : 'https://sdapi.elchapo.cn/sdapi/v1/txt2img', {
         method: 'POST',
         timeout: config.requestTimeout,
         headers: {
@@ -241,7 +213,7 @@ export function apply(ctx: Context, config: Config) {
         },
         data,
       }).then((res) => {
-        return res.data
+        return res.data.images
       })
 
       let ret, count = 0  //any 是不好的  //会改的
@@ -291,21 +263,10 @@ export function apply(ctx: Context, config: Config) {
         }
 
         await Promise.all(
-        ret.generations.map(async item => {
-          let buffer = Buffer.from(item.img, 'base64')
-          await sharp(buffer)
-            .modulate({
-              saturation: 1.2
-            })
-            .normalise()
-            .png()
-            .toBuffer()
-            .then(data => {
-              result.children.push(segment('message', attrs, segment.image(data)))
-            })
-            .catch(err => { logger.error(err) })
-          if (config.output === 'verbose') result.children.push(segment('message', attrs, `工作站名称 = ${item.worker_name}`))
-        }))
+          ret.map(async item => {
+            result.children.push(segment('message', attrs, segment.image('base64://' + stripDataPrefix(item))))
+            if (config.output === 'verbose') result.children.push(segment('message', attrs, `工作站名称 = 42`))
+          }))
 
         return result
       }

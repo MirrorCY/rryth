@@ -172,4 +172,9 @@ export function resizeInput(size: Size): Size {
   }
 }
 
+export function stripDataPrefix(base64: string) {
+  // workaround for different gradio versions
+  // https://github.com/koishijs/novelai-bot/issues/90
+  return base64.replace(/^data:image\/[\w-]+;base64,/, '')
+}
 

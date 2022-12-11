@@ -1,16 +1,13 @@
 commands:
   rryth:
-    description: 人人有图画计划 2.0
+    description: 人人有图画计划 2.2.0
     usage: |-
       输入 sai 空格提示词即可画画，提示词是用逗号分隔的英文
-      新增默认 apikey ，移除并重新添加插件可以出图更快
       示例 sai -r 512x512 -t 28 -c 7 tree, yellow -u green
-      本插件基于 novelai-bot 修改完成，旨在提供免费画画方案，
+      本插件基于 novelai-bot 修改完成，旨在提供免费画画方案
       更新日志与反馈地址：https://github.com/MirrorCY/rryth
 
     options:
-      batch: 生成多少张图(1-5)
-      model: 设定生成模型('Stable Diffusion 2.0')
       resolution: 设定图片尺寸(512x768)
       sampler: 设置采样器
       seed: 设置随机种子(随意一个数字)
@@ -18,13 +15,12 @@ commands:
       scale: 提示词相关性(0-20)
       strength: 重绘制幅度(0-1)
       undesired: 反向提示词(加在提示词后)
-      override: 去除插件自带的提示词
+      override: 去除插件附加的提示词
 
     messages:
       expect-prompt: 请输入标签。
       expect-image: 请输入图片。
       latin-only: 只接受英文输入。
-      too-many-words: 输入的提示词多于75个。
       concurrent-jobs@random:
         - 等会再约稿吧，我已经忙不过来了……
         - 是数位板没电了，才…才不是我不想画呢！
@@ -42,5 +38,3 @@ commands:
       empty-response: 服务器返回了空白图片，请稍后重试。
       request-failed: 请求失败 ({0})，请稍后重试。
       request-timeout: 请求超时。
-      sampler: |-
-        可选的采样器有：

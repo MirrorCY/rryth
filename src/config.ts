@@ -1,19 +1,16 @@
 import { Dict, Schema, Time } from 'koishi'
 import { Size } from './utils'
 
-export const modelMap = {
-  'Anything 3.0': 'Anything Diffusion',
-  'Hentai Diffusion': 'Hentai Diffusion',
-  'Stable Diffusion 1.5': 'stable_diffusion',
-  'Stable Diffusion 2.0': 'stable_diffusion_2.0',
-  'Midjourney Diffusion': 'Midjourney Diffusion',
-} as const
+// export const modelMap = {
+//   'Anything 3.0': 'Anything Diffusion',
+//   'Hentai Diffusion': 'Hentai Diffusion',
+//   'Stable Diffusion 1.5': 'stable_diffusion',
+//   'Stable Diffusion 2.0': 'stable_diffusion_2.0',
+//   'Midjourney Diffusion': 'Midjourney Diffusion',
+// } as const
 
-export const orientMap = {
-  landscape: { height: 512, width: 768 },
-  portrait: { height: 768, width: 512 },
-  square: { height: 640, width: 640 },
-} as const
+
+
 
 const ucPreset = [
   'nsfw, lowres, bad anatomy, bad hands, text, error, missing fingers',
@@ -21,11 +18,7 @@ const ucPreset = [
   'normal quality, jpeg artifacts, signature, watermark, username, blurry',
 ].join(', ')
 
-type Model = keyof typeof modelMap
-type Orient = keyof typeof orientMap
 
-export const models = Object.keys(modelMap) as Model[]
-export const orients = Object.keys(orientMap) as Orient[]
 
 export namespace sampler {
 
@@ -39,8 +32,14 @@ export namespace sampler {
     'k_dpmpp_2s_a': 'DPM++ 2S a',
     'k_dpmpp_2m': 'DPM++ 2M',
     'k_dpm_fast': 'DPM fast',
-    'k_dpm_adaptive': 'DPM adaptive',
-    'dpmsolver': 'DPM solver'
+    'k_dpm_ad': 'DPM adaptive',
+    'k_lms_ka': 'LMS Karras',
+    'k_dpm_2_ka': 'DPM2 Karras',
+    'k_dpm_2_a_ka': 'DPM2 a Karras',
+    'k_dpmpp_2s_a_ka': 'DPM++ 2S a Karras',
+    'k_dpmpp_2m_ka': 'DPM++ 2M Karras',
+    'ddim': 'DDIM',
+    'plms': 'PLMS',
   }
 
   export function createSchema(map: Dict<string>) {
@@ -71,7 +70,6 @@ export interface PromptConfig {
   latinOnly?: boolean
   nsfw?: boolean
   translator?: boolean
-  maxWords?: number
 }
 
 export const PromptConfig: Schema<PromptConfig> = Schema.object({
@@ -82,7 +80,6 @@ export const PromptConfig: Schema<PromptConfig> = Schema.object({
     Schema.const('before' as const).description('置于最前'),
     Schema.const('after' as const).description('置于最后'),
   ]).description('默认附加标签的位置。').default('after'),
-  nsfw: Schema.boolean().description('是否跳过 R18 审查，没什么明显作用。').default(false),
   translator: Schema.boolean().description('是否启用自动翻译。').default(false),
   latinOnly: Schema.boolean().description('是否只接受英文输入。').default(true),
 }).description('输入设置')
@@ -92,56 +89,46 @@ export interface Config extends PromptConfig {
   token?: string
   email?: string
   password?: string
-  model?: Model
-  orient?: Orient
   sampler?: string
   maxSteps?: number
   maxBatch?: number
   maxResolution?: number
   anatomy?: boolean
-  output?: 'default' | 'verbose'
+  output?: 'default' | 'verbose' | 'minimal'
   allowAnlas?: boolean | number
   enableUpscale?: boolean
   endpoint?: string
   headers?: Dict<string>
-  maxRetryCount?: number
   requestTimeout?: number
   recallTimeout?: number
   maxConcurrency?: number
+  weigh?: number
+  hight?: number
+  steps?: number
 }
 
 export const Config = Schema.intersect([
-  Schema.object({
-    updateInfo: Schema.boolean().description('关闭更新提示，谢谢你喜欢人人有图画项目！(目前插件有点小问题，所有设置需要重启 koishi 才能应用，期待更新。)').default(false),
-    // endpoint: Schema.string().description('API 服务器地址，通常无需修改。').default('https://stablehorde.net/api/v2/generate/sync'),
-    // headers: Schema.dict(String).description('apikey 不想 [获取自己的](https://stablehorde.net/register) 可以默认。').default({ apikey: 'Kd_oa9Oj7GJF7rGLYUH0xg' }),
-  }),
-
   Schema.union([
     Schema.object({
-      model: Schema.union(models).description('默认的生成模型。[Models 中有介绍和更多模型](https://aqualxx.github.io/stable-ui/workers) <br /> ' +
-        '如果有你想要但是没加进来的模型，[加群](https://simx.elchapo.cn/NovelAI.png)大喊 42 <br /> ' +
-        '下一个版本将空格修改为下划线，需要进来重新配置默认模型，否则无法启动插件').default('Anything 3.0'),
       sampler: sampler.createSchema(sampler.sdh),
     }).description('参数设置'),
   ] as const),
 
   Schema.object({
-    orient: Schema.union(orients).description('默认的图片方向。').default('portrait'),
-    maxSteps: Schema.natural().description('允许的最大迭代步数。').default(50),
-    // maxBatch: Schema.natural().description('允许批量生成的图片数，通常默认值足够，增加此参数可能会成倍的提高服务器负载，并有可能最终导致大家都没图画，请三思。').default(5),
-    maxResolution: Schema.natural().description('生成图片的最大尺寸。').default(1024),
-    enableUpscale: Schema.boolean().description('是否启用超采样，降低出图速度，大幅提升出图质量。').default(true),
+    weigh: Schema.number().description('默认宽度').default(512).max(960),
+    hight: Schema.number().description('默认宽度').default(512).max(960),
+    steps: Schema.number().description('默认步数').default(28).max(50),
+    // 服务器将限制单次绘制量为 960*960*50 超过此数值的将视为非法请求并被封禁。
   }),
 
   PromptConfig,
 
   Schema.object({
     output: Schema.union([
+      Schema.const('minimal').description('仅图片'),
       Schema.const('default').description('标准输出'),
       Schema.const('verbose').description('详细输出'),
     ]).description('输出方式。').default('default'),
-    maxRetryCount: Schema.natural().description('连接失败时最大的重试次数。').default(3),
     requestTimeout: Schema.number().role('time').description('当请求超过这个时间时会中止并提示超时。').default(Time.minute),
     recallTimeout: Schema.number().role('time').description('图片发送后自动撤回的时间 (设置为 0 以禁用此功能)。').default(0),
     maxConcurrency: Schema.number().description('单个频道下的最大并发数量 (设置为 0 以禁用此功能)。').default(0),
@@ -224,18 +211,10 @@ export function parseInput(input: string, config: Config, forbidden: Forbidden[]
     return true
   })
 
-  if (Math.max(getWordCount(positive), getWordCount(negative)) > 75) {
-    return ['.too-many-words']
-  }
-
   if (!override) {
     appendToList(positive, config.basePrompt)
     appendToList(negative, config.negativePrompt)
   }
 
   return [null, positive.join(', '), negative.join(', ')]
-}
-
-function getWordCount(words: string[]) {
-  return words.join(' ').replace(/[^a-z0-9]+/g, ' ').trim().split(' ').length
 }

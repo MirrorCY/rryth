@@ -68,8 +68,7 @@ export function apply(ctx: Context, config: Config) {
   }
 
   const cmd = ctx.command('rryth <prompts:text>')
-    .alias('sai')
-    .alias('rr')
+    .alias('sai', 'rr')
     .userFields(['authority'])
     .option('resolution', '-r <resolution>', { type: resolution })
     .option('override', '-O')
@@ -98,7 +97,11 @@ export function apply(ctx: Context, config: Config) {
 
       if (config.translator && ctx.translator) {
         try {
-          input = await ctx.translator.translate({ input, target: 'en' })
+          const zhPromptMap: string[] = input.split(/,|，/g).filter((val, i) => /[^a-zA-Z0-9]+/g.test(val) ? `${i}=${val}` : false)
+          const translatedMap = await (await ctx.translator.translate({ input: zhPromptMap.join(','), target: 'en' })).toLocaleLowerCase().split(', ')
+          zhPromptMap.forEach((t, i) => {
+            input = input.replace(t, translatedMap[i]).replace('，',',')
+          })
         } catch (err) {
           logger.warn(err)
         }
@@ -208,15 +211,15 @@ export function apply(ctx: Context, config: Config) {
       }
 
       async function getContent() {
+        const attrs: Dict<any, string> = {
+          userId: session.userId,
+          nickname: session.author?.nickname || session.username,
+        }
         if (config.output === 'minimal')
           return await Promise.all(
             ret.map(async item => {
               session.send(segment('message', attrs, segment.image('base64://' + stripDataPrefix(item))))
             }))
-        const attrs = {
-          userId: session.userId,
-          nickname: session.author?.nickname || session.username,
-        }
         const result = segment('figure')
         const lines = [`种子 = ${seed}`]
         if (config.output === 'verbose') {

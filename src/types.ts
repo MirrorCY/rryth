@@ -47,7 +47,6 @@ export namespace StableDiffusionWebUI {
     seed_resize_from_w?: number
     batch_size?: number
     n_iter?: number
-    steps?: number
     cfg_scale?: number
     width?: number
     height?: number
@@ -58,7 +57,6 @@ export namespace StableDiffusionWebUI {
     s_tmax?: number
     s_tmin?: number
     s_noise?: number
-    sampler_index?: string
   }
 
   export interface Response {

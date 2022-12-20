@@ -1,62 +1,17 @@
 import { Dict, Schema, Time } from 'koishi'
 import { Size } from './utils'
 
-// export const modelMap = {
-//   'Anything 3.0': 'Anything Diffusion',
-//   'Hentai Diffusion': 'Hentai Diffusion',
-//   'Stable Diffusion 1.5': 'stable_diffusion',
-//   'Stable Diffusion 2.0': 'stable_diffusion_2.0',
-//   'Midjourney Diffusion': 'Midjourney Diffusion',
-// } as const
-
-
-
-
 const ucPreset = [
   'nsfw, lowres, bad anatomy, bad hands, text, error, missing fingers',
   'extra digit, fewer digits, cropped, worst quality, low quality',
   'normal quality, jpeg artifacts, signature, watermark, username, blurry',
 ].join(', ')
 
-
-
-export namespace sampler {
-
-  export const sdh = {
-    'k_euler_a': 'Euler a',
-    'k_euler': 'Euler',
-    'k_lms': 'LMS',
-    'k_heun': 'Heun',
-    'k_dpm_2': 'DPM2',
-    'k_dpm_2_a': 'DPM2 a',
-    'k_dpmpp_2s_a': 'DPM++ 2S a',
-    'k_dpmpp_2m': 'DPM++ 2M',
-    'k_dpm_fast': 'DPM fast',
-    'k_dpm_ad': 'DPM adaptive',
-    'k_lms_ka': 'LMS Karras',
-    'k_dpm_2_ka': 'DPM2 Karras',
-    'k_dpm_2_a_ka': 'DPM2 a Karras',
-    'k_dpmpp_2s_a_ka': 'DPM++ 2S a Karras',
-    'k_dpmpp_2m_ka': 'DPM++ 2M Karras',
-    'ddim': 'DDIM',
-    'plms': 'PLMS',
-  }
-
-  export function createSchema(map: Dict<string>) {
-    return Schema.union(Object.entries(map).map(([key, value]) => {
-      return Schema.const(key).description(value)
-    })).description('默认的采样器。').default('k_euler_a')
-  }
-
-}
-
 export interface Options {
   enhance: boolean
   model: string
   resolution: Size
-  sampler: string
   seed: string
-  steps: number
   scale: number
   noise: number
   strength: number
@@ -89,10 +44,7 @@ export interface Config extends PromptConfig {
   token?: string
   email?: string
   password?: string
-  sampler?: string
-  maxSteps?: number
   maxBatch?: number
-  maxResolution?: number
   anatomy?: boolean
   output?: 'default' | 'verbose' | 'minimal'
   allowAnlas?: boolean | number
@@ -104,21 +56,13 @@ export interface Config extends PromptConfig {
   maxConcurrency?: number
   weigh?: number
   hight?: number
-  steps?: number
 }
 
 export const Config = Schema.intersect([
-  Schema.union([
-    Schema.object({
-      sampler: sampler.createSchema(sampler.sdh),
-    }).description('参数设置'),
-  ] as const),
 
   Schema.object({
-    weigh: Schema.number().description('默认宽度').default(512).max(960),
-    hight: Schema.number().description('默认宽度').default(512).max(960),
-    steps: Schema.number().description('默认步数').default(28).max(50),
-    // 服务器将限制单次绘制量为 960*960*50 超过此数值的将视为非法请求并被封禁。
+    weigh: Schema.number().description('默认宽度比').default(1),
+    hight: Schema.number().description('默认高度比').default(1.3)
   }),
 
   PromptConfig,

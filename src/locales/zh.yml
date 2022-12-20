@@ -1,19 +1,17 @@
 commands:
   rryth:
-    description: 人人有图画计划 2.2.0
+    description: 人人有图画计划 2.3.0
     usage: |-
       输入 sai 空格提示词即可画画，提示词是用逗号分隔的英文
-      示例 sai -r 512x512 -t 28 -c 7 tree, yellow -u green
+      示例 sai -r 512x768 -t 28 -c 7 tree, yellow -u green
       本插件基于 novelai-bot 修改完成，旨在提供免费画画方案
       更新日志与反馈地址：https://github.com/MirrorCY/rryth
 
     options:
-      resolution: 设定图片尺寸(512x768)
-      sampler: 设置采样器
+      resolution: 设定图片比例(1.5x1.2)
       seed: 设置随机种子(随意一个数字)
-      steps: 设置迭代步数(0-50)
       scale: 提示词相关性(0-20)
-      strength: 重绘制幅度(0-1)
+      strength: 图片修改强度(0-1)
       undesired: 反向提示词(加在提示词后)
       override: 去除插件附加的提示词
 

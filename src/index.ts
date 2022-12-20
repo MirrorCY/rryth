@@ -1,7 +1,7 @@
 import { Context, Dict, Logger, Quester, segment, Session } from 'koishi'
-import { Config, parseForbidden, parseInput, sampler } from './config'
+import { Config, parseForbidden, parseInput } from './config'
 import { ImageData } from './types'
-import { closestMultiple, download, getImageSize, NetworkError, resizeInput, Size, stripDataPrefix } from './utils'
+import { download, getImageSize, NetworkError, Size, stripDataPrefix } from './utils'
 import { } from '@koishijs/translator'
 import { } from '@koishijs/plugin-help'
 
@@ -50,20 +50,12 @@ export function apply(ctx: Context, config: Config) {
   }, { immediate: true })
 
 
-  const step = (source: string) => {
-    const value = +source
-    if (value * 0 === 0 && Math.floor(value) === value && value > 0 && value <= (config.maxSteps || 50)) return value
-    throw new Error()
-  }
-
   const resolution = (source: string): Size => {
-    const cap = source.match(/^(\d+)[x×](\d+)$/)
+    const cap = source.match(/^(\d*\.?\d+)[x×](\d*\.?\d+)$/)
+    logger.info(cap)
     if (!cap) throw new Error()
-    const width = closestMultiple(+cap[1])
-    const height = closestMultiple(+cap[2])
-    if (Math.max(width, height) > (config.maxResolution || 960)) {
-      throw new Error()
-    }
+    const width = +cap[1]
+    const height = +cap[2]
     return { width, height }
   }
 
@@ -72,9 +64,7 @@ export function apply(ctx: Context, config: Config) {
     .userFields(['authority'])
     .option('resolution', '-r <resolution>', { type: resolution })
     .option('override', '-O')
-    .option('sampler', '-s <sampler>')
     .option('seed', '-x <seed:number>')
-    .option('steps', '-t <step>', { type: step })
     .option('scale', '-c <scale:number>')
     .option('strength', '-N <strength:number>')
     .option('undesired', '-u <undesired>')
@@ -131,10 +121,9 @@ export function apply(ctx: Context, config: Config) {
 
         Object.assign(parameters, {
           scale: options.scale ?? 11,
-          steps: options.steps ?? 50,
         })
 
-        options.resolution ||= resizeInput(getImageSize(image.buffer))
+        options.resolution ||= getImageSize(image.buffer)
         Object.assign(parameters, {
           height: options.resolution.height,
           width: options.resolution.width,
@@ -147,7 +136,6 @@ export function apply(ctx: Context, config: Config) {
           height: options.resolution.height,
           width: options.resolution.width,
           scale: options.scale ?? 7,
-          steps: options.steps ?? 20,
         })
       }
 
@@ -172,21 +160,18 @@ export function apply(ctx: Context, config: Config) {
       }
       const data = (() => {
         const body = {
-          sampler_index: Object.keys(sampler.sdh)[options.sampler],
           init_images: image && [image.dataUrl],
           prompt: parameters.prompt,
           seed: parameters.seed,
           negative_prompt: parameters.uc,
           cfg_scale: parameters.scale,
-          steps: parameters.steps,
           width: parameters.width,
           height: parameters.height,
           denoising_strength: parameters.strength,
         }
         return body
       })()
-
-      const request = () => ctx.http.axios(image ? 'https://sdapi.elchapo.cn/sdapi/v1/img2img' : 'https://sdapi.elchapo.cn/sdapi/v1/txt2img', {
+      const request = () => ctx.http.axios('http://127.0.0.1:16002/aa', {
         method: 'POST',
         timeout: config.requestTimeout,
         headers: {
@@ -223,8 +208,6 @@ export function apply(ctx: Context, config: Config) {
 
           lines.push(`model = Anything 3.0`)
           lines.push(
-            `采样器 = ${options.sampler}`,
-            `迭代步数 = ${parameters.steps}`,
             `提示词相关度 = ${parameters.scale}`,
           )
           if (parameters.image) {
@@ -258,9 +241,4 @@ export function apply(ctx: Context, config: Config) {
         }, config.recallTimeout)
       }
     })
-
-  ctx.accept(['model', 'orient', 'sampler'], (config) => {
-    cmd._options.sampler.fallback = config.sampler
-    cmd._options.sampler.type = Object.keys(sampler.sdh)
-  }, { immediate: true })
 }

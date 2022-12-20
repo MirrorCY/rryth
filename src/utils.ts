@@ -121,55 +121,9 @@ export class NetworkError extends Error {
   }
 }
 
-
-export function closestMultiple(num: number, mult = 64) {
-  const floor = Math.floor(num / mult) * mult
-  const ceil = Math.ceil(num / mult) * mult
-  const closest = num - floor < ceil - num ? floor : ceil
-  if (Number.isNaN(closest)) return 0
-  return closest <= 0 ? mult : closest
-}
-
 export interface Size {
   width: number
   height: number
-}
-
-export function resizeInput(size: Size): Size {
-  // if width and height produce a valid size, use it
-  const { width, height } = size
-  if (width % 64 === 0 && height % 64 === 0 && width * height <= MAX_OUTPUT_SIZE) {
-    return { width, height }
-  }
-
-  // otherwise, set lower size as 512 and use aspect ratio to the other dimension
-  const aspectRatio = width / height
-  if (aspectRatio > 1) {
-    const height = 512
-    const width = closestMultiple(height * aspectRatio)
-    // check that image is not too large
-    if (width * height <= MAX_OUTPUT_SIZE) {
-      return { width, height }
-    }
-  } else {
-    const width = 512
-    const height = closestMultiple(width / aspectRatio)
-    // check that image is not too large
-    if (width * height <= MAX_OUTPUT_SIZE) {
-      return { width, height }
-    }
-  }
-
-  // if that fails set the higher size as 1024 and use aspect ratio to the other dimension
-  if (aspectRatio > 1) {
-    const width = 1024
-    const height = closestMultiple(width / aspectRatio)
-    return { width, height }
-  } else {
-    const height = 1024
-    const width = closestMultiple(height * aspectRatio)
-    return { width, height }
-  }
 }
 
 export function stripDataPrefix(base64: string) {

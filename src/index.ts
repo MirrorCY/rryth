@@ -97,10 +97,10 @@ export function apply(ctx: Context, config: Config) {
 
       if (config.translator && ctx.translator) {
         try {
-          const zhPromptMap: string[] = input.split(/,|，/g).filter((val, i) => /[^a-zA-Z0-9]+/g.test(val) ? `${i}=${val}` : false)
-          const translatedMap = await (await ctx.translator.translate({ input: zhPromptMap.join(','), target: 'en' })).toLocaleLowerCase().split(', ')
+          const zhPromptMap: string[] = input.split(/,|，/g).filter((val) => /[^a-zA-Z0-9]+/g.test(val))
+          const translatedMap = (await ctx.translator.translate({ input: zhPromptMap.join(','), target: 'en' })).toLocaleLowerCase().split(', ')
           zhPromptMap.forEach((t, i) => {
-            input = input.replace(t, translatedMap[i]).replace('，',',')
+            input = input.replace(t, translatedMap[i]).replace('，', ',')
           })
         } catch (err) {
           logger.warn(err)
@@ -216,10 +216,7 @@ export function apply(ctx: Context, config: Config) {
           nickname: session.author?.nickname || session.username,
         }
         if (config.output === 'minimal')
-          return await Promise.all(
-            ret.map(async item => {
-              session.send(segment('message', attrs, segment.image('base64://' + stripDataPrefix(item))))
-            }))
+          return segment('message', attrs, segment.image('base64://' + stripDataPrefix(ret[0])))
         const result = segment('figure')
         const lines = [`种子 = ${seed}`]
         if (config.output === 'verbose') {

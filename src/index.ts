@@ -86,17 +86,19 @@ export function apply(ctx: Context, config: Config) {
 
 
       if (config.translator && ctx.translator) {
-        try {
-          const zhPromptMap: string[] = input.split(/,|，/g).filter((val) => /[^a-zA-Z0-9]+/g.test(val))
-          const translatedMap = (await ctx.translator.translate({ input: zhPromptMap.join(','), target: 'en' })).toLocaleLowerCase().split(', ')
-          zhPromptMap.forEach((t, i) => {
-            input = input.replace(t, translatedMap[i]).replace('，', ',')
-          })
-        } catch (err) {
-          logger.warn(err)
+        const zhPromptMap: string[] = /[一-龟]+/g.exec(input)
+        if (zhPromptMap.length > 0) {
+          try {
+            const translatedMap = (await ctx.translator.translate({ input: zhPromptMap.join(','), target: 'en' })).toLocaleLowerCase().split(', ')
+            zhPromptMap.forEach((t, i) => {
+              input = input.replace(t, translatedMap[i]).replace('，', ',')
+            })
+          } catch (err) {
+            logger.warn(err)
+          }
         }
       }
-
+      
       const [errPath, prompt, uc] = parseInput(input, config, forbidden, options.override)
       if (errPath) return session.text(errPath)
 

@@ -1,5 +1,6 @@
 import { Dict, Schema, Time } from 'koishi'
 import { Size } from './utils'
+import { parseOnput } from './types'
 
 const ucPreset = [
   'nsfw, lowres, bad anatomy, bad hands, text, error, missing fingers',
@@ -56,13 +57,17 @@ export interface Config extends PromptConfig {
   maxConcurrency?: number
   weigh?: number
   hight?: number
+  strength?: number
+  scale?: number
 }
 
 export const Config = Schema.intersect([
 
   Schema.object({
     weigh: Schema.number().description('默认宽度比').default(1),
-    hight: Schema.number().description('默认高度比').default(1.3)
+    hight: Schema.number().description('默认高度比').default(1.3),
+    strength: Schema.number().description('默认图转图强度').default(0.6),
+    scale: Schema.number().description('默认提示词相关度').default(11)
   }),
 
   PromptConfig,
@@ -100,7 +105,7 @@ export function parseForbidden(input: string) {
 
 const backslash = /@@__BACKSLASH__@@/g
 
-export function parseInput(input: string, config: Config, forbidden: Forbidden[], override: boolean): string[] {
+export function parseInput(input: string, config: Config, forbidden: Forbidden[], override: boolean): parseOnput {
   input = input.toLowerCase()
     .replace(/\\\\/g, backslash.source)
     .replace(/，/g, ',')
@@ -116,7 +121,7 @@ export function parseInput(input: string, config: Config, forbidden: Forbidden[]
     .replace(/_/g, ' ')
 
   if (config.latinOnly && /[^\s\w"'“”‘’.,:|\\()\[\]{}-]/.test(input)) {
-    return ['.latin-only']
+    return { errPath: '.latin-only' }
   }
 
   const negative = []
@@ -143,7 +148,7 @@ export function parseInput(input: string, config: Config, forbidden: Forbidden[]
 
   // remove forbidden words
   const positive = input.split(/,\s*/g).filter((word) => {
-    word = word.replace(/[^a-z0-9]+/g, ' ').trim()
+    word = word.replace(/[\x00-\x7f]/g, s => s.replace(/[^0-9a-zA-Z]/, ' ')).replace(/\s+/, ' ').trim()
     if (!word) return false
     for (const { pattern, strict } of forbidden) {
       if (strict && word.split(/\W+/g).includes(pattern)) {
@@ -160,5 +165,5 @@ export function parseInput(input: string, config: Config, forbidden: Forbidden[]
     appendToList(negative, config.negativePrompt)
   }
 
-  return [null, positive.join(', '), negative.join(', ')]
+  return { errPath: null, positive: positive, uc: negative.join(', ') }
 }

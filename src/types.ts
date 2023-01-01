@@ -66,3 +66,9 @@ export namespace StableDiffusionWebUI {
     info: any
   }
 }
+
+export interface parseOnput {
+  errPath?: string
+  positive?: Array<string>
+  uc?: string
+}

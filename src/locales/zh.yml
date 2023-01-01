@@ -1,6 +1,6 @@
 commands:
   rryth:
-    description: 人人有图画计划 2.3.0
+    description: 人人有图画计划 2.3.4
     usage: |-
       输入 sai 空格提示词即可画画，提示词是用逗号分隔的英文
       示例 sai -r 512x768 -t 28 -c 7 tree, yellow -u green

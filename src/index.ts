@@ -52,14 +52,13 @@ export function apply(ctx: Context, config: Config) {
 
   const resolution = (source: string): Size => {
     const cap = source.match(/^(\d*\.?\d+)[x×](\d*\.?\d+)$/)
-    logger.info(cap)
     if (!cap) throw new Error()
     const width = +cap[1]
     const height = +cap[2]
     return { width, height }
   }
 
-  const cmd = ctx.command('rryth <prompts:text>')
+  const cmd = ctx.command(`${name} <prompts:text>`)
     .alias('sai', 'rr')
     .userFields(['authority'])
     .option('resolution', '-r <resolution>', { type: resolution })
@@ -70,7 +69,7 @@ export function apply(ctx: Context, config: Config) {
     .option('undesired', '-u <undesired>')
     .action(async ({ session, options }, input) => {
 
-      if (!input?.trim()) return session.execute('help rryth')
+      if (!input?.trim()) return session.execute(`help ${name}`)
 
       let imgUrl: string, image: ImageData
       input = segment.transform(input, {
@@ -84,21 +83,23 @@ export function apply(ctx: Context, config: Config) {
         return session.text('.expect-prompt')
       }
 
+      const { errPath, positive, uc } = parseInput(input, config, forbidden, options.override)
+      let prompt = positive.join(', ')
+      if (errPath) return session.text(errPath)
 
       if (config.translator && ctx.translator) {
-        try {
-          const zhPromptMap: string[] = input.split(/,|，/g).filter((val) => /[^a-zA-Z0-9]+/g.test(val))
-          const translatedMap = (await ctx.translator.translate({ input: zhPromptMap.join(','), target: 'en' })).toLocaleLowerCase().split(', ')
-          zhPromptMap.forEach((t, i) => {
-            input = input.replace(t, translatedMap[i]).replace('，', ',')
-          })
-        } catch (err) {
-          logger.warn(err)
+        const zhPromptMap: string[] = prompt.match(/[\u4e00-\u9fa5]+/g)
+        if (zhPromptMap?.length > 0) {
+          try {
+            const translatedMap = (await ctx.translator.translate({ input: zhPromptMap.join(','), target: 'en' })).toLocaleLowerCase().split(',')
+            zhPromptMap.forEach((t, i) => {
+              prompt = prompt.replace(t, translatedMap[i]).replace('，', ',')
+            })
+          } catch (err) {
+            logger.warn(err)
+          }
         }
       }
-
-      const [errPath, prompt, uc] = parseInput(input, config, forbidden, options.override)
-      if (errPath) return session.text(errPath)
 
       const seed = options.seed || Math.floor(Math.random() * Math.pow(2, 32))
 
@@ -106,6 +107,8 @@ export function apply(ctx: Context, config: Config) {
         seed,
         prompt,
         uc,
+        scale: options.scale ?? config.scale ?? 11,
+        steps: imgUrl ? 50 : 28,
       }
 
       if (imgUrl) {
@@ -119,15 +122,11 @@ export function apply(ctx: Context, config: Config) {
           return session.text('.download-error')
         }
 
-        Object.assign(parameters, {
-          scale: options.scale ?? 11,
-        })
-
         options.resolution ||= getImageSize(image.buffer)
         Object.assign(parameters, {
           height: options.resolution.height,
           width: options.resolution.width,
-          strength: options.strength ?? 0.3,
+          strength: options.strength ?? config.strength ?? 0.3,
         })
 
       } else {
@@ -135,7 +134,6 @@ export function apply(ctx: Context, config: Config) {
         Object.assign(parameters, {
           height: options.resolution.height,
           width: options.resolution.width,
-          scale: options.scale ?? 7,
         })
       }
 
@@ -168,10 +166,11 @@ export function apply(ctx: Context, config: Config) {
           width: parameters.width,
           height: parameters.height,
           denoising_strength: parameters.strength,
+          steps: parameters.steps,
         }
         return body
       })()
-      const request = () => ctx.http.axios('http://127.0.0.1:16002/aa', {
+      const request = () => ctx.http.axios('https://rryth.elchapo.cn:11000/v2', {
         method: 'POST',
         timeout: config.requestTimeout,
         headers: {
@@ -183,7 +182,7 @@ export function apply(ctx: Context, config: Config) {
         return res.data.images
       })
 
-      let ret  //any 是不好的  //会改的
+      let ret: string[]
       while (true) {
         try {
           ret = await request()

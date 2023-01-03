@@ -59,6 +59,7 @@ export interface Config extends PromptConfig {
   hight?: number
   strength?: number
   scale?: number
+  censor?: boolean
 }
 
 export const Config = Schema.intersect([
@@ -67,7 +68,8 @@ export const Config = Schema.intersect([
     weigh: Schema.number().description('默认宽度比').default(1),
     hight: Schema.number().description('默认高度比').default(1.3),
     strength: Schema.number().description('默认图转图强度').default(0.6),
-    scale: Schema.number().description('默认提示词相关度').default(11)
+    scale: Schema.number().description('默认提示词相关度').default(11),
+    censor: Schema.boolean().description('是否启用图像审核。').default(false),
   }),
 
   PromptConfig,

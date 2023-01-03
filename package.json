@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-rryth",
   "description": "Generate images by horde",
-  "version": "2.3.4",
+  "version": "2.4.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -30,7 +30,8 @@
     "browser": true,
     "service": {
       "optional": [
-        "translator"
+        "translator",
+        "censor"
       ]
     },
     "description": {
@@ -50,14 +51,8 @@
   "peerDependencies": {
     "koishi": "^4.11.0"
   },
-  "peerDependenciesMeta": {
-    "@koishijs/translator": {
-      "optional": true
-    }
-  },
   "devDependencies": {
     "@koishijs/plugin-help": "^1.2.6",
-    "@types/libsodium-wrappers": "^0.7.10",
     "@types/node": "^17.0.45",
     "atsc": "^1.2.2",
     "koishi": "^4.11.0",
@@ -65,7 +60,6 @@
     "typescript": "^4.9.4"
   },
   "dependencies": {
-    "image-size": "^1.0.2",
-    "libsodium-wrappers": "^0.7.10"
+    "image-size": "^1.0.2"
   }
 }

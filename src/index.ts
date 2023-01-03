@@ -1,7 +1,7 @@
-import { Context, Dict, Logger, Quester, segment, Session } from 'koishi'
+import { Context, Dict, h, Logger, Quester, Session } from 'koishi'
 import { Config, parseForbidden, parseInput } from './config'
 import { ImageData } from './types'
-import { download, getImageSize, NetworkError, Size, stripDataPrefix } from './utils'
+import { download, getImageSize, NetworkError, Size } from './utils'
 import { } from '@koishijs/translator'
 import { } from '@koishijs/plugin-help'
 
@@ -72,7 +72,7 @@ export function apply(ctx: Context, config: Config) {
       if (!input?.trim()) return session.execute(`help ${name}`)
 
       let imgUrl: string, image: ImageData
-      input = segment.transform(input, {
+      input = h.transform(input, {
         image(attrs) {
           imgUrl = attrs.url
           return ''
@@ -195,38 +195,30 @@ export function apply(ctx: Context, config: Config) {
       }
 
       async function getContent() {
+        const safeImg = config.censor
+          ? h('censor', h('image', { url: 'data:image/png;base64,' + ret[0] }))
+          : h('image', { url: 'data:image/png;base64,' + ret[0] })
         const attrs: Dict<any, string> = {
           userId: session.userId,
           nickname: session.author?.nickname || session.username,
         }
-        if (config.output === 'minimal')
-          return segment('message', attrs, segment.image('base64://' + stripDataPrefix(ret[0])))
-        const result = segment('figure')
+        if (config.output === 'minimal') {
+          return safeImg
+        }
+        const result = h('figure')
         const lines = [`种子 = ${seed}`]
         if (config.output === 'verbose') {
-
-          lines.push(`model = Anything 3.0`)
-          lines.push(
-            `提示词相关度 = ${parameters.scale}`,
-          )
-          if (parameters.image) {
-            lines.push(
-              `图转图强度 = ${parameters.strength}`,
-            )
-          }
+          lines.push(`模型 = Anything 3.0`)
+          lines.push(`提示词相关度 = ${parameters.scale}`)
+          if (parameters.image) lines.push(`图转图强度 = ${parameters.strength}`)
         }
-        result.children.push(segment('message', attrs, lines.join('\n')))
-        result.children.push(segment('message', attrs, `关键词 = ${prompt}`))
+        result.children.push(h('message', attrs, lines.join('\n')))
+        result.children.push(h('message', attrs, `关键词 = ${prompt}`))
         if (config.output === 'verbose') {
-          result.children.push(segment('message', attrs, `排除关键词 = ${uc}`))
+          result.children.push(h('message', attrs, `排除关键词 = ${uc}`))
         }
-
-        await Promise.all(
-          ret.map(async item => {
-            result.children.push(segment('message', attrs, segment.image('base64://' + stripDataPrefix(item))))
-            if (config.output === 'verbose') result.children.push(segment('message', attrs, `工作站名称 = 42`))
-          }))
-
+        result.children.push(safeImg)
+        if (config.output === 'verbose') result.children.push(h('message', attrs, `工作站名称 = 42`))
         return result
       }
 

@@ -1,16 +1,16 @@
 {
   "name": "koishi-plugin-rryth",
   "description": "Generate images by horde",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
     "lib"
   ],
   "browser": {
-    "image-size": false,
-    "libsodium-wrappers": false
+    "image-size": false
   },
+  "author": "42 <mirrorcy@vip.qq.com>",
   "maintainers": [
     "42 <mirrorcy@vip.qq.com>",
     "Lipraty <sis1943@outlook.com>"
@@ -35,7 +35,7 @@
       ]
     },
     "description": {
-      "zh": "人人有图画计划。无需自行搭建后端的、开箱即用的、免费的、无需登录注册的、平均 30 秒出图的画画插件"
+      "zh": "人人有图画计划。无需自行搭建后端的、开箱即用的、免费的、无需登录注册的画画插件"
     }
   },
   "keywords": [

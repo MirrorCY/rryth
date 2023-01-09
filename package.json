@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-rryth",
   "description": "Generate images by horde",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -11,7 +11,7 @@
     "image-size": false
   },
   "author": "42 <mirrorcy@vip.qq.com>",
-  "maintainers": [
+  "contributors": [
     "42 <mirrorcy@vip.qq.com>",
     "Lipraty <sis1943@outlook.com>"
   ],

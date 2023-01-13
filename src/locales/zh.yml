@@ -1,6 +1,6 @@
 commands:
   rryth:
-    description: 人人有图画计划 2.4.0
+    description: 人人有图画计划 2.4.3
     usage: |-
       输入 sai 空格提示词即可画画，提示词是用逗号分隔的英文
       示例 sai -r 512x768 -t 28 -c 7 tree, yellow -u green
@@ -19,14 +19,18 @@ commands:
       expect-prompt: 请输入标签。
       expect-image: 请输入图片。
       latin-only: 只接受英文输入。
-      concurrent-jobs@random:
-        - 等会再约稿吧，我已经忙不过来了……
-        - 是数位板没电了，才…才不是我不想画呢！
-        - 那你得先教我画画（理直气壮
-      waiting@random:
-        - 少女绘画中……
-        - 在画了在画了
-        - 你就在此地不要走动，等我给你画一幅
+      concurrent-jobs: |-
+        <random>
+          <>等会再约稿吧，我已经忙不过来了……</>
+          <>是数位板没电了，才…才不是我不想画呢！</>
+          <>那你得先教我画画（理直气壮</>
+        </random>
+      waiting: |-
+        <random>
+          <>少女绘画中……</>
+          <>在画了在画了</>
+          <>你就在此地不要走动，等我给你画一幅</>
+        </random>
       pending: 在画了在画了，不过前面还有 {0} 个稿……
       file-too-large: 文件体积过大。
       unsupported-file-type: 不支持的文件格式。

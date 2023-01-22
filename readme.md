@@ -23,7 +23,8 @@
 
 没有 Github 账号的小伙伴可以来群里找我 @42
 
-![QR](https://simx.elchapo.cn/NovelAI.png)
+![QR](https://simx.elchapo.cn/NovelAI.png)![rryth 人人有图画群聊二维码](https://user-images.githubusercontent.com/37006258/213943065-7286a687-b373-45ad-ab69-5051a5f1aea8.png)
+
 
 ## FOSSA Status
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FMirrorCY%2Frryth.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FMirrorCY%2Frryth?ref=badge_large)

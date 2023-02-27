@@ -52,8 +52,8 @@ export interface Config extends PromptConfig {
   requestTimeout?: number
   recallTimeout?: number
   maxConcurrency?: number
-  weigh?: number
-  hight?: number
+  width?: number
+  height?: number
   strength?: number
   scale?: number
   censor?: boolean
@@ -62,8 +62,8 @@ export interface Config extends PromptConfig {
 export const Config = Schema.intersect([
 
   Schema.object({
-    weigh: Schema.number().description('默认宽度比').default(1),
-    hight: Schema.number().description('默认高度比').default(1.3),
+    width: Schema.number().description('默认宽度比').default(1),
+    height: Schema.number().description('默认高度比').default(1.3),
     strength: Schema.number().description('默认图转图强度').default(0.5),
     scale: Schema.number().description('默认提示词相关度').default(7),
     censor: Schema.boolean().description('是否启用图像审核。').default(false),

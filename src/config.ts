@@ -1,5 +1,4 @@
 import { Dict, Schema, Time } from 'koishi'
-import { Size } from './utils'
 import { parseOnput } from './types'
 
 const ucPreset = [
@@ -11,7 +10,6 @@ const ucPreset = [
 export interface Options {
   enhance: boolean
   model: string
-  resolution: Size
   seed: string
   scale: number
   noise: number
@@ -51,7 +49,6 @@ export interface Config extends PromptConfig {
   allowAnlas?: boolean | number
   enableUpscale?: boolean
   endpoint?: string
-  headers?: Dict<string>
   requestTimeout?: number
   recallTimeout?: number
   maxConcurrency?: number
@@ -67,8 +64,8 @@ export const Config = Schema.intersect([
   Schema.object({
     weigh: Schema.number().description('默认宽度比').default(1),
     hight: Schema.number().description('默认高度比').default(1.3),
-    strength: Schema.number().description('默认图转图强度').default(0.6),
-    scale: Schema.number().description('默认提示词相关度').default(11),
+    strength: Schema.number().description('默认图转图强度').default(0.5),
+    scale: Schema.number().description('默认提示词相关度').default(7),
     censor: Schema.boolean().description('是否启用图像审核。').default(false),
   }),
 
@@ -167,5 +164,5 @@ export function parseInput(input: string, config: Config, forbidden: Forbidden[]
     appendToList(negative, config.negativePrompt)
   }
 
-  return { errPath: null, positive: positive, uc: negative.join(', ') }
+  return { errPath: null, positive: positive.join(', '), uc: negative.join(', ') }
 }

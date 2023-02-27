@@ -1,54 +1,22 @@
-import { Context, Dict, h, Logger, Quester, Session } from 'koishi'
+import { Context, Dict, h, Logger } from 'koishi'
 import { Config, parseForbidden, parseInput } from './config'
-import { ImageData } from './types'
-import { download, getImageSize, NetworkError, Size } from './utils'
+import { Result, Size, Forbidden } from './types'
 import { } from '@koishijs/translator'
 import { } from '@koishijs/plugin-help'
 
-
 export * from './config'
-
 export const reactive = true
 export const name = 'rryth'
-
 const logger = new Logger(name)
-
-function handleError(session: Session, err: Error) {
-  if (Quester.isAxiosError(err)) {
-    if (err.response?.data) {
-      logger.error(err.response.data)
-      return session.text(err.response.data.message)
-    }
-    if (err.response?.status === 402) {
-      return session.text('.unauthorized')
-    } else if (err.response?.status) {
-      return session.text('.response-error', [err.response.status])
-    } else if (err.code === 'ETIMEDOUT') {
-      return session.text('.request-timeout')
-    } else if (err.code) {
-      return session.text('.request-failed', [err.code])
-    }
-  }
-  logger.error(err)
-  return session.text('.unknown-error')
-}
-
-interface Forbidden {
-  pattern: string
-  strict: boolean
-}
 
 export function apply(ctx: Context, config: Config) {
   ctx.i18n.define('zh', require('./locales/zh'))
 
   let forbidden: Forbidden[]
-  const tasks: Dict<Set<string>> = Object.create(null)
-  const globalTasks = new Set<string>()
 
   ctx.accept(['forbidden'], (config) => {
     forbidden = parseForbidden(config.forbidden)
   }, { immediate: true })
-
 
   const resolution = (source: string): Size => {
     const cap = source.match(/^(\d*\.?\d+)[x×](\d*\.?\d+)$/)
@@ -65,33 +33,39 @@ export function apply(ctx: Context, config: Config) {
     .option('override', '-O')
     .option('seed', '-x <seed:number>')
     .option('scale', '-c <scale:number>')
+    .option('steps', '-t <steps:number>')
     .option('strength', '-N <strength:number>')
     .option('undesired', '-u <undesired>')
     .action(async ({ session, options }, input) => {
 
+      // 空输入时调用帮助
       if (!input?.trim()) return session.execute(`help ${name}`)
+      //
 
-      let imgUrl: string, image: ImageData
+      // 分离图片
+      let imgUrl: string
       input = h.transform(input, {
         image(attrs) {
           imgUrl = attrs.url
           return ''
         },
       })
+      //
 
-      if (!input.trim() && !config.basePrompt) {
-        return session.text('.expect-prompt')
-      }
+      // 解析输入
+      const parseOnput = parseInput(input, config, forbidden, options.override)
+      let prompt = parseOnput.positive
+      if (parseOnput.errPath) return session.text(parseOnput.errPath)
+      //
 
-      const { errPath, positive, uc } = parseInput(input, config, forbidden, options.override)
-      let prompt = positive.join(', ')
-      if (errPath) return session.text(errPath)
-
+      // 翻译中文
       if (config.translator && ctx.translator) {
         const zhPromptMap: string[] = prompt.match(/[\u4e00-\u9fa5]+/g)
         if (zhPromptMap?.length > 0) {
           try {
-            const translatedMap = (await ctx.translator.translate({ input: zhPromptMap.join(','), target: 'en' })).toLocaleLowerCase().split(',')
+            const translatedMap = (
+              await ctx.translator.translate({ input: zhPromptMap.join(','), target: 'en' })
+            ).toLocaleLowerCase().split(',')
             zhPromptMap.forEach((t, i) => {
               prompt = prompt.replace(t, translatedMap[i]).replace('，', ',')
             })
@@ -100,104 +74,43 @@ export function apply(ctx: Context, config: Config) {
           }
         }
       }
+      //
 
-      const seed = options.seed || Math.floor(Math.random() * Math.pow(2, 32))
-
+      // 构建请求参数
+      options.resolution ||= { height: config.hight, width: config.weigh }
       const parameters: Dict = {
-        seed,
-        prompt,
-        uc,
-        scale: options.scale ?? config.scale ?? 11,
-        steps: imgUrl ? 50 : 28,
+        seed: options.seed || Math.floor(Math.random() * Math.pow(2, 32)),
+        prompt: prompt,
+        negative_prompt: parseOnput.uc,
+        cfg_scale: options.scale ?? config.scale,
+        steps: options.steps ?? 28,
+        height: options.resolution.height,
+        width: options.resolution.width,
+        denoising_strength: options.strength ?? config.strength,
       }
-
       if (imgUrl) {
-        try {
-          image = await download(ctx, imgUrl)
-        } catch (err) {
-          if (err instanceof NetworkError) {
-            return session.text(err.message, err.params)
-          }
-          logger.error(err)
-          return session.text('.download-error')
-        }
-
-        options.resolution ||= getImageSize(image.buffer)
-        Object.assign(parameters, {
-          height: options.resolution.height,
-          width: options.resolution.width,
-          strength: options.strength ?? config.strength ?? 0.3,
-        })
-
-      } else {
-        options.resolution ||= { height: config.hight, width: config.weigh }
-        Object.assign(parameters, {
-          height: options.resolution.height,
-          width: options.resolution.width,
-        })
+        parameters.init_images = Buffer.from((await ctx.http.file(imgUrl)).data).toString('base64')
       }
+      // 
 
-      const id = Math.random().toString(36).slice(2)
-      if (config.maxConcurrency) {
-        const store = tasks[session.cid] ||= new Set()
-        if (store.size >= config.maxConcurrency) {
-          return session.text('.concurrent-jobs')
-        } else {
-          store.add(id)
-        }
-      }
-
-      session.send(globalTasks.size
-        ? session.text('.pending', [globalTasks.size])
-        : session.text('.waiting'))
-
-      globalTasks.add(id)
-      const cleanUp = () => {
-        tasks[session.cid]?.delete(id)
-        globalTasks.delete(id)
-      }
-      const data = (() => {
-        const body = {
-          init_images: image && [image.dataUrl],
-          prompt: parameters.prompt,
-          seed: parameters.seed,
-          negative_prompt: parameters.uc,
-          cfg_scale: parameters.scale,
-          width: parameters.width,
-          height: parameters.height,
-          denoising_strength: parameters.strength,
-          steps: parameters.steps,
-        }
-        return body
-      })()
-      const request = () => ctx.http.axios('https://rryth.elchapo.cn:11000/v2', {
+      // 发送请求
+      const request = await ctx.http.axios('https://rryth.elchapo.cn:11000/v2', {
         method: 'POST',
         timeout: config.requestTimeout,
         headers: {
-          'api': '42',
-          ...config.headers,
+          'EULA': 'This interface is intended ONLY for use with the Koishi-plugin-rryth.' +
+            'The maintainer refuses any use other than the above methods.'
         },
-        data,
-      }).then((res) => {
-        return res.data.images
+        data: JSON.stringify(parameters),
       })
+      const ret: Result = request.data
+      // 
 
-      let ret: string[]
-      while (true) {
-        try {
-          ret = await request()
-          cleanUp()
-          break
-        } catch (err) {
-          cleanUp()
-          return handleError(session, err)
-        }
-      }
-
+      // 构建消息
       async function getContent() {
         const safeImg = config.censor
-          ? h('censor', h('image', { url: 'data:image/png;base64,' + ret[0] }))
-          : h('image', { url: 'data:image/png;base64,' + ret[0] })
+          ? h('censor', h('image', { url: ret.images[0] }))
+          : h('image', { url: 'data:image/png;base64,' + ret.images[0] })
         const attrs: Dict<any, string> = {
           userId: session.userId,
           nickname: session.author?.nickname || session.username,
@@ -206,24 +119,25 @@ export function apply(ctx: Context, config: Config) {
           return safeImg
         }
         const result = h('figure')
-        const lines = [`种子 = ${seed}`]
+        const lines = [`种子 = ${parameters.seed}`]
         if (config.output === 'verbose') {
           lines.push(`模型 = Anything 3.0`)
           lines.push(`提示词相关度 = ${parameters.scale}`)
           if (parameters.image) lines.push(`图转图强度 = ${parameters.strength}`)
         }
         result.children.push(h('message', attrs, lines.join('\n')))
-        result.children.push(h('message', attrs, `关键词 = ${prompt}`))
+        result.children.push(h('message', attrs, `关键词 = ${parameters.prompt}`))
         if (config.output === 'verbose') {
-          result.children.push(h('message', attrs, `排除关键词 = ${uc}`))
+          result.children.push(h('message', attrs, `排除关键词 = ${parameters.negative_prompt}`))
         }
         result.children.push(safeImg)
         if (config.output === 'verbose') result.children.push(h('message', attrs, `工作站名称 = 42`))
         return result
       }
+      //
 
+      // 超时撤回
       const ids = await session.send(await getContent())
-
       if (config.recallTimeout) {
         ctx.setTimeout(() => {
           for (const id of ids) {
@@ -231,5 +145,6 @@ export function apply(ctx: Context, config: Config) {
           }
         }, config.recallTimeout)
       }
+      // 
     })
 }

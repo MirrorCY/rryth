@@ -1,13 +1,20 @@
-export interface ImageData {
-  buffer: ArrayBuffer
-  base64: string
-  dataUrl: string
-}
-
 export interface parseOnput {
   errPath?: string
-  positive?: Array<string>
+  positive?: string
   uc?: string
 }
 
-// TODO: 接口返回格式
+export interface Size {
+  width: number
+  height: number
+}
+
+export interface Forbidden {
+  pattern: string
+  strict: boolean
+}
+
+export interface Result {
+  images: string[]
+  messages: string[]
+}
